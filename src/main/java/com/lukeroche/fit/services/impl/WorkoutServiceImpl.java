@@ -1,9 +1,14 @@
 package com.lukeroche.fit.services.impl;
 
+import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
+import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
+import com.lukeroche.fit.repositories.ExerciseRepository;
+import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutRepository;
 import com.lukeroche.fit.services.WorkoutService;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,10 +21,14 @@ import java.util.stream.StreamSupport;
 @Service
 public class WorkoutServiceImpl implements WorkoutService {
 
+    private final WorkoutExerciseRepository workoutExerciseRepository;
     private WorkoutRepository workoutRepository;
 
-    public WorkoutServiceImpl(WorkoutRepository workoutRepository) {
+    private ExerciseRepository exerciseRepository;
+
+    public WorkoutServiceImpl(WorkoutRepository workoutRepository, WorkoutExerciseRepository workoutExerciseRepository) {
         this.workoutRepository = workoutRepository;
+        this.workoutExerciseRepository = workoutExerciseRepository;
     }
 
     @Override
@@ -67,4 +76,23 @@ public class WorkoutServiceImpl implements WorkoutService {
     public void delete(Long id) {
         workoutRepository.deleteById(id);
     }
+
+
+    @Override
+    public WorkoutExerciseEntity addExercise(Long workoutId, AddWorkoutExerciseRequest request){
+
+        WorkoutEntity workout = workoutRepository.findById(workoutId).orElseThrow();
+
+        ExerciseEntity exercise = exerciseRepository.findById(request.getExerciseId()).orElseThrow();
+
+        WorkoutExerciseEntity workoutExercise = WorkoutExerciseEntity.builder()
+                .workoutEntity(workout)
+                .exerciseEntity(exercise)
+                .orderIndex(request.getOrderIndex())
+                .build();
+
+        return workoutExerciseRepository.save(workoutExercise);
+    }
+
+
 }

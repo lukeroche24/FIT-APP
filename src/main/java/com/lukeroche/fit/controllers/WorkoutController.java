@@ -1,8 +1,10 @@
 package com.lukeroche.fit.controllers;
 
+import com.lukeroche.fit.domain.dto.WorkoutExerciseResponse;
 import com.lukeroche.fit.domain.dto.WorkoutRequest;
 import com.lukeroche.fit.domain.dto.WorkoutResponse;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
+import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
 import com.lukeroche.fit.mappers.Mapper;
 import com.lukeroche.fit.mappers.WorkoutMapper;
 import com.lukeroche.fit.services.WorkoutService;
@@ -51,6 +53,7 @@ public class WorkoutController {
             return new ResponseEntity<>(workoutResponse, HttpStatus.OK);
         }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
+
 
     @PutMapping(path = "/workouts/{id}")
     public ResponseEntity<WorkoutResponse> fullUpdateWorkout(@PathVariable("id") Long id,

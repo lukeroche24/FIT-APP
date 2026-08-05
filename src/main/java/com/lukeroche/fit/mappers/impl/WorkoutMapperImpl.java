@@ -17,6 +17,7 @@ public class WorkoutMapperImpl implements WorkoutMapper {
 
     private ModelMapper modelMapper;
 
+
     public WorkoutMapperImpl(ModelMapper modelMapper) {
         this.modelMapper = modelMapper;
     }

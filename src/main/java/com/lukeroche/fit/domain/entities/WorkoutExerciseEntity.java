@@ -17,7 +17,7 @@ import java.util.List;
 public class WorkoutExerciseEntity extends BaseEntity{
     private Integer orderIndex;
 
-    private String notes;
+    //private String notes;
 
     @ManyToOne
     @JoinColumn(name = "workout_id")

@@ -1,7 +1,9 @@
 package com.lukeroche.fit.services;
 
+import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
+import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -22,4 +24,8 @@ public interface WorkoutService {
     WorkoutEntity partialUpdate(Long id, WorkoutEntity workoutEntity);
 
     void delete(Long id);
+
+    WorkoutExerciseEntity addExercise(Long workoutId, AddWorkoutExerciseRequest request);
+
+
 }
