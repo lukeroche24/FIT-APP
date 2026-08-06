@@ -1,12 +1,11 @@
 package com.lukeroche.fit.controllers;
 
-import com.lukeroche.fit.domain.dto.WorkoutExerciseResponse;
-import com.lukeroche.fit.domain.dto.WorkoutRequest;
-import com.lukeroche.fit.domain.dto.WorkoutResponse;
+import com.lukeroche.fit.domain.dto.*;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
-import com.lukeroche.fit.mappers.Mapper;
+import com.lukeroche.fit.mappers.WorkoutExerciseMapper;
 import com.lukeroche.fit.mappers.WorkoutMapper;
+import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
 import com.lukeroche.fit.services.WorkoutService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,13 +18,18 @@ import java.util.Optional;
 @RestController
 public class WorkoutController {
 
+    private final WorkoutExerciseRepository workoutExerciseRepository;
     private WorkoutService workoutService;
 
     private WorkoutMapper workoutMapper;
 
-    public WorkoutController(WorkoutService workoutService, WorkoutMapper workoutMapper) {
+    private WorkoutExerciseMapper workoutExerciseMapper;
+
+    public WorkoutController(WorkoutService workoutService, WorkoutMapper workoutMapper, WorkoutExerciseMapper workoutExerciseMapper, WorkoutExerciseRepository workoutExerciseRepository) {
         this.workoutService = workoutService;
         this.workoutMapper = workoutMapper;
+        this.workoutExerciseMapper = workoutExerciseMapper;
+        this.workoutExerciseRepository = workoutExerciseRepository;
     }
 
 
@@ -35,6 +39,13 @@ public class WorkoutController {
         WorkoutEntity savedWorkoutEntity = workoutService.save(workoutEntity);
 
         return new ResponseEntity<>(workoutMapper.toResponse(savedWorkoutEntity), HttpStatus.CREATED);
+    }
+
+    @PostMapping(path = "/workouts/{id}/exercises")
+    public ResponseEntity<WorkoutExerciseResponse> addWorkoutExercise(@PathVariable Long id, @RequestBody AddWorkoutExerciseRequest request) {
+
+        WorkoutExerciseEntity saved = workoutService.addWorkoutExercise(id, request);
+        return new ResponseEntity<>(workoutExerciseMapper.toResponse(saved), HttpStatus.CREATED);
     }
 
 
@@ -82,6 +93,22 @@ public class WorkoutController {
         WorkoutEntity updatedWorkout = workoutService.partialUpdate(id, workoutEntity);
         return new ResponseEntity<>(
                 workoutMapper.toResponse(updatedWorkout),
+                HttpStatus.OK
+        );
+    }
+
+    @PatchMapping(path = "/workouts/{workoutId}/exercises/{workoutExerciseId}")
+    public ResponseEntity<WorkoutExerciseResponse> reorderWorkoutExercises(
+            @PathVariable("workoutId") Long workoutId,
+            @PathVariable("workoutExerciseId") Long workoutExerciseId,
+            @RequestBody UpdateWorkoutExerciseRequest workoutExerciseRequest) {
+        if(!workoutService.workoutExerciseBelongsToWorkout(workoutExerciseId, workoutId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        WorkoutExerciseEntity updatedWorkoutExerciseEntity = workoutService.reorderWorkoutExercise(workoutId, workoutExerciseId, workoutExerciseRequest);
+        return new ResponseEntity<>(
+                workoutExerciseMapper.toResponse(updatedWorkoutExerciseEntity),
                 HttpStatus.OK
         );
     }

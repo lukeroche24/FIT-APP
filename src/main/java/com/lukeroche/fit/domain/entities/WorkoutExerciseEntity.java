@@ -15,7 +15,8 @@ import java.util.List;
 @Entity
 @Table(name = "workout_exercises")
 public class WorkoutExerciseEntity extends BaseEntity{
-    private Integer orderIndex;
+
+    private Long orderIndex;
 
     //private String notes;
 

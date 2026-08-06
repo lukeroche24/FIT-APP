@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AddWorkoutExerciseRequest {
+public class UpdateWorkoutExerciseRequest {
 
-    private Long exerciseId;
-
+    private Long orderIndex;
 }

@@ -1,7 +1,7 @@
 package com.lukeroche.fit.services;
 
+import com.lukeroche.fit.domain.dto.UpdateWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
-import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
 import org.springframework.data.domain.Page;
@@ -25,7 +25,11 @@ public interface WorkoutService {
 
     void delete(Long id);
 
-    WorkoutExerciseEntity addExercise(Long workoutId, AddWorkoutExerciseRequest request);
+    WorkoutExerciseEntity addWorkoutExercise(Long workoutId, AddWorkoutExerciseRequest request);
+
+    WorkoutExerciseEntity reorderWorkoutExercise(Long workoutId, Long workoutExerciseID, UpdateWorkoutExerciseRequest request);
+
+    boolean workoutExerciseBelongsToWorkout(Long workoutExerciseId, Long workoutId);
 
 
 }

@@ -1,5 +1,6 @@
 package com.lukeroche.fit.services.impl;
 
+import com.lukeroche.fit.domain.dto.UpdateWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
@@ -8,7 +9,6 @@ import com.lukeroche.fit.repositories.ExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutRepository;
 import com.lukeroche.fit.services.WorkoutService;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,9 +26,10 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private ExerciseRepository exerciseRepository;
 
-    public WorkoutServiceImpl(WorkoutRepository workoutRepository, WorkoutExerciseRepository workoutExerciseRepository) {
+    public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository, WorkoutExerciseRepository workoutExerciseRepository) {
         this.workoutRepository = workoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
+        this.exerciseRepository = exerciseRepository;
     }
 
     @Override
@@ -79,7 +80,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
 
     @Override
-    public WorkoutExerciseEntity addExercise(Long workoutId, AddWorkoutExerciseRequest request){
+    public WorkoutExerciseEntity addWorkoutExercise(Long workoutId, AddWorkoutExerciseRequest request){
 
         WorkoutEntity workout = workoutRepository.findById(workoutId).orElseThrow();
 
@@ -88,11 +89,46 @@ public class WorkoutServiceImpl implements WorkoutService {
         WorkoutExerciseEntity workoutExercise = WorkoutExerciseEntity.builder()
                 .workoutEntity(workout)
                 .exerciseEntity(exercise)
-                .orderIndex(request.getOrderIndex())
+                .orderIndex(workoutExerciseRepository.countByWorkoutEntity_Id(workoutId) + 1)
                 .build();
 
         return workoutExerciseRepository.save(workoutExercise);
     }
 
+    @Override
+    public WorkoutExerciseEntity reorderWorkoutExercise(Long workoutId, Long workoutExerciseID, UpdateWorkoutExerciseRequest workoutExerciseRequest) {
 
+        List<WorkoutExerciseEntity> workoutExercises = workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(workoutId);
+
+        WorkoutExerciseEntity reorderedExercise = workoutExercises.stream()
+                .filter(workoutExerciseEntity -> workoutExerciseEntity.getId().equals(workoutExerciseID))
+                .findFirst()
+                .orElseThrow();
+
+        int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex());
+
+        if (newIndex > workoutExercises.size()) {
+            newIndex = workoutExercises.size() - 1;
+        }
+
+        workoutExercises.remove(reorderedExercise);
+
+        workoutExercises.add(newIndex, reorderedExercise);
+
+        for (int i = 0; i < workoutExercises.size(); i++) {
+            workoutExercises.get(i).setOrderIndex((long) i+1);
+        }
+
+        workoutExerciseRepository.saveAll(workoutExercises);
+
+        return reorderedExercise;
+
+        
+
+    }
+
+    @Override
+    public boolean workoutExerciseBelongsToWorkout(Long workoutExerciseId, Long workoutId) {
+        return workoutExerciseRepository.existsByIdAndWorkoutEntity_Id(workoutExerciseId, workoutId);
+    }
 }
