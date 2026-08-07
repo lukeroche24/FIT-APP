@@ -1,9 +1,6 @@
 package com.lukeroche.fit.domain.entities;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -20,7 +17,9 @@ import java.util.List;
 @Table(name = "workouts")
 public class WorkoutEntity extends BaseEntity{
 
-    private Integer createdByUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id", nullable = false)
+    private User createdByUserId;
 
     private String description;
 
