@@ -9,6 +9,7 @@ import com.lukeroche.fit.repositories.ExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutRepository;
 import com.lukeroche.fit.services.WorkoutService;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -70,7 +71,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             Optional.ofNullable(workoutEntity.getDescription()).ifPresent((existingWorkout::setDescription));
             Optional.ofNullable(workoutEntity.getVisibility()).ifPresent((existingWorkout::setVisibility));
             return workoutRepository.save(existingWorkout);
-        }).orElseThrow(() -> new RuntimeException("Author does not exist"));
+        }).orElseThrow(() -> new RuntimeException("Workout does not exist"));
     }
 
     @Override
@@ -96,6 +97,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
+    @Transactional
     public WorkoutExerciseEntity reorderWorkoutExercise(Long workoutId, Long workoutExerciseID, UpdateWorkoutExerciseRequest workoutExerciseRequest) {
 
         List<WorkoutExerciseEntity> workoutExercises = workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(workoutId);
@@ -105,13 +107,12 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .findFirst()
                 .orElseThrow();
 
-        int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex());
+        int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex()) - 1;
 
-        if (newIndex > workoutExercises.size()) {
-            newIndex = workoutExercises.size() - 1;
-        }
 
         workoutExercises.remove(reorderedExercise);
+
+        newIndex = Math.max(0, Math.min(newIndex, workoutExercises.size()));
 
         workoutExercises.add(newIndex, reorderedExercise);
 
@@ -123,7 +124,23 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         return reorderedExercise;
 
-        
+
+
+    }
+
+    @Override
+    @Transactional
+    public void removeExerciseFromWorkout(Long workoutId, Long workoutExerciseId) {
+
+        workoutExerciseRepository.deleteById(workoutExerciseId);
+
+        List<WorkoutExerciseEntity> workoutExercises = workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(workoutId);
+
+        for (int i = 0; i < workoutExercises.size(); i++) {
+            workoutExercises.get(i).setOrderIndex((long) i+1);
+        }
+
+        workoutExerciseRepository.saveAll(workoutExercises);
 
     }
 

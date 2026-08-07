@@ -18,18 +18,16 @@ import java.util.Optional;
 @RestController
 public class WorkoutController {
 
-    private final WorkoutExerciseRepository workoutExerciseRepository;
     private WorkoutService workoutService;
 
     private WorkoutMapper workoutMapper;
 
     private WorkoutExerciseMapper workoutExerciseMapper;
 
-    public WorkoutController(WorkoutService workoutService, WorkoutMapper workoutMapper, WorkoutExerciseMapper workoutExerciseMapper, WorkoutExerciseRepository workoutExerciseRepository) {
+    public WorkoutController(WorkoutService workoutService, WorkoutMapper workoutMapper, WorkoutExerciseMapper workoutExerciseMapper) {
         this.workoutService = workoutService;
         this.workoutMapper = workoutMapper;
         this.workoutExerciseMapper = workoutExerciseMapper;
-        this.workoutExerciseRepository = workoutExerciseRepository;
     }
 
 
@@ -116,6 +114,15 @@ public class WorkoutController {
     @DeleteMapping(path = "/workouts/{id}")
     public ResponseEntity deleteWorkout(@PathVariable("id") Long id) {
         workoutService.delete(id);
-        return new ResponseEntity(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @DeleteMapping(path = "/workouts/{workoutId}/exercises/{workoutExerciseId}")
+    public ResponseEntity deleteWorkoutExercise(@PathVariable("workoutId") Long workoutId, @PathVariable("workoutExerciseId") Long workoutExerciseId) {
+        if(!workoutService.workoutExerciseBelongsToWorkout(workoutExerciseId, workoutId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        };
+        workoutService.removeExerciseFromWorkout(workoutId, workoutExerciseId);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -15,7 +15,7 @@ public class WorkoutExerciseResponse {
 
     private Long id;
 
-    private Integer orderIndex;
+    private Long orderIndex;
 
     private String notes;
 

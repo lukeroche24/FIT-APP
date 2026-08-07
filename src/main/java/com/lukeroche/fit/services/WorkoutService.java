@@ -31,5 +31,7 @@ public interface WorkoutService {
 
     boolean workoutExerciseBelongsToWorkout(Long workoutExerciseId, Long workoutId);
 
+    void removeExerciseFromWorkout(Long workoutId, Long workoutExerciseId);
+
 
 }
