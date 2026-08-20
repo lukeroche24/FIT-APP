@@ -8,10 +8,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.UUID;
 
 @Service
 public class ExerciseServiceImpl implements ExerciseService {
@@ -28,38 +26,29 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     @Override
-    public List<ExerciseEntity> findAll() {
-        return StreamSupport.stream(exerciseRepository
-                                .findAll()
-                                .spliterator(),
-                        false)
-                .collect(Collectors.toList());
+    public Page<ExerciseEntity> findAllForUser(UUID userId, Pageable pageable) {
+        return exerciseRepository.findByCreatedByUserId(userId, pageable);
     }
 
     @Override
-    public Page<ExerciseEntity> findAll(Pageable pageable) {
-        return exerciseRepository.findAll(pageable);
+    public Optional<ExerciseEntity> findOneForUser(Long id, UUID userId) {
+        return exerciseRepository.findByIdAndCreatedByUserId(id, userId);
     }
 
     @Override
-    public Optional<ExerciseEntity> findOne(Long id) {
-        return exerciseRepository.findById(id);
+    public boolean isOwnedByUser(Long id, UUID userId) {
+        return exerciseRepository.existsByIdAndCreatedByUserId(id, userId);
     }
 
     @Override
-    public boolean isExists(Long id) {
-        return exerciseRepository.existsById(id);
-    }
-
-    @Override
-    public ExerciseEntity partialUpdate(Long id, ExerciseEntity exerciseEntity) {
+    public ExerciseEntity partialUpdate(Long id, UUID userId, ExerciseEntity exerciseEntity) {
         exerciseEntity.setId(id);
 
-        return exerciseRepository.findById(id).map(existingExercise -> {
+        return exerciseRepository.findByIdAndCreatedByUserId(id, userId).map(existingExercise -> {
             Optional.ofNullable(exerciseEntity.getName()).ifPresent((existingExercise::setName));
             Optional.ofNullable(exerciseEntity.getDescription()).ifPresent((existingExercise::setDescription));
             return exerciseRepository.save(existingExercise);
-        }).orElseThrow(() -> new RuntimeException("Author does not exist"));
+        }).orElseThrow(() -> new RuntimeException("Exercise does not exist"));
     }
 
     @Override

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @EqualsAndHashCode(callSuper = true)
 @Getter
@@ -17,9 +18,8 @@ import java.util.List;
 @Table(name = "workouts")
 public class WorkoutEntity extends BaseEntity{
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by_id", nullable = false)
-    private User createdByUserId;
+    @Column(name = "created_by_id", nullable = false)
+    private UUID createdByUserId;
 
     private String description;
 

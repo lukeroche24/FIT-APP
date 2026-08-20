@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,5 +21,7 @@ public class WorkoutExerciseResponse {
     private String notes;
 
     private ExerciseResponse exercise;
+
+    private List<PlannedSetResponse> plannedSets;
 
 }

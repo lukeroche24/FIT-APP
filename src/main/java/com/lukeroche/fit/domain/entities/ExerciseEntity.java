@@ -3,6 +3,7 @@ package com.lukeroche.fit.domain.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -18,6 +19,6 @@ public class ExerciseEntity extends BaseEntity{
 
     private String description;
 
-    private Integer createdByUserId;
+    private UUID createdByUserId;
 
 }

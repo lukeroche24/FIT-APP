@@ -2,23 +2,25 @@ package com.lukeroche.fit.controllers;
 
 import com.lukeroche.fit.domain.dto.AuthResponse;
 import com.lukeroche.fit.domain.dto.LoginRequest;
+import com.lukeroche.fit.domain.dto.RegisterRequest;
 import com.lukeroche.fit.services.AuthenticationService;
+import com.lukeroche.fit.services.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "/auth/login")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationService authenticationService;
+    private final UserService userService;
 
-    @PostMapping
+    @PostMapping(path = "/auth/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest loginRequest) {
         UserDetails userDetails = authenticationService.authenticate(
                 loginRequest.getEmail(),
@@ -30,5 +32,24 @@ public class AuthController {
                 .expiresIn(86400)
                 .build();
         return ResponseEntity.ok(authResponse);
+    }
+
+    @PostMapping(path = "/auth/register")
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
+        userService.createUser(
+                registerRequest.getName(),
+                registerRequest.getEmail(),
+                registerRequest.getPassword()
+        );
+        UserDetails userDetails = authenticationService.authenticate(
+                registerRequest.getEmail(),
+                registerRequest.getPassword()
+        );
+        String tokenValue = authenticationService.generateToken(userDetails);
+        AuthResponse authResponse = AuthResponse.builder()
+                .token(tokenValue)
+                .expiresIn(86400)
+                .build();
+        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 }

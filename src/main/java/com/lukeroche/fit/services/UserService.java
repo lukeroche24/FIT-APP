@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface UserService {
     User getUserById(UUID id);
+    User createUser(String name, String email, String rawPassword);
 }
