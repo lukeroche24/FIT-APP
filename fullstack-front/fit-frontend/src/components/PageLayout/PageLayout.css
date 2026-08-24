@@ -1,0 +1,19 @@
+.page-layout {
+  margin-top: 2rem;
+}
+
+.page-layout--narrow {
+  max-width: 600px;
+}
+
+.page-layout--standard {
+  max-width: 700px;
+}
+
+.page-layout--wide {
+  max-width: 800px;
+}
+
+.page-layout--auth {
+  max-width: 400px;
+}

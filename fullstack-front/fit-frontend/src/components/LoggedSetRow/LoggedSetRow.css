@@ -1,0 +1,5 @@
+.set-row {
+  background: var(--page-bg);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}

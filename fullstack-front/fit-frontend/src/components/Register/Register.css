@@ -1,0 +1,29 @@
+.auth-page {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-brand {
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.auth-card {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+}
+
+.auth-card h1 {
+  font-size: 1.5rem;
+  text-align: center;
+}

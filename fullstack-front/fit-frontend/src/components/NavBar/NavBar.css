@@ -1,0 +1,56 @@
+.app-navbar {
+  background: var(--dark-surface);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.app-navbar-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.8rem 1.1rem;
+  flex-wrap: wrap;
+}
+
+.app-navbar-brand {
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  color: var(--on-dark) !important;
+  text-decoration: none;
+}
+
+.app-navbar-links {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.app-navbar-link {
+  color: var(--on-dark-muted) !important;
+  text-decoration: none !important;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar-link:hover {
+  color: var(--on-dark) !important;
+  background: var(--dark-surface-alt);
+}
+
+.app-navbar-link.active {
+  color: #fff !important;
+  background: var(--accent);
+}
+
+.app-navbar .btn-outline-secondary {
+  --bs-btn-color: var(--on-dark-muted);
+  --bs-btn-border-color: var(--dark-surface-alt);
+  --bs-btn-hover-bg: var(--dark-surface-alt);
+  --bs-btn-hover-border-color: var(--dark-surface-alt);
+  --bs-btn-hover-color: #fff;
+}
