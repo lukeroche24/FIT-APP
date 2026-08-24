@@ -1,6 +1,6 @@
-package com.lukeroche.fit.domain.dto;
+package com.lukeroche.fit.domain.dto.workoutlog;
 
-
+import com.lukeroche.fit.domain.dto.exercise.ExerciseResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class WorkoutExerciseResponse {
+public class LoggedExerciseResponse {
 
     private Long id;
 
@@ -22,6 +22,5 @@ public class WorkoutExerciseResponse {
 
     private ExerciseResponse exercise;
 
-    private List<PlannedSetResponse> plannedSets;
-
+    private List<LoggedSetResponse> loggedSets;
 }

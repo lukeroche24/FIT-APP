@@ -1,7 +1,7 @@
 package com.lukeroche.fit.mappers;
 
-import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
-import com.lukeroche.fit.domain.dto.WorkoutExerciseResponse;
+import com.lukeroche.fit.domain.dto.workout.AddWorkoutExerciseRequest;
+import com.lukeroche.fit.domain.dto.workout.WorkoutExerciseResponse;
 import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
 
 

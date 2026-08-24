@@ -1,4 +1,4 @@
-package com.lukeroche.fit.domain.dto;
+package com.lukeroche.fit.domain.dto.plan;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class AddWorkoutExerciseRequest {
+public class PlanRequest {
 
-    private Long exerciseId;
+    private String name;
 
+    private Integer weeks;
 }

@@ -1,4 +1,4 @@
-package com.lukeroche.fit.domain.dto;
+package com.lukeroche.fit.domain.dto.workoutlog;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ExerciseRequest {
+public class AddLoggedExerciseRequest {
 
-    private String name;
-
-    private String description;
+    private Long exerciseId;
 }

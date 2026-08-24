@@ -1,8 +1,8 @@
 package com.lukeroche.fit.controllers;
 
-import com.lukeroche.fit.domain.dto.AuthResponse;
-import com.lukeroche.fit.domain.dto.LoginRequest;
-import com.lukeroche.fit.domain.dto.RegisterRequest;
+import com.lukeroche.fit.domain.dto.auth.AuthResponse;
+import com.lukeroche.fit.domain.dto.auth.LoginRequest;
+import com.lukeroche.fit.domain.dto.auth.RegisterRequest;
 import com.lukeroche.fit.services.AuthenticationService;
 import com.lukeroche.fit.services.UserService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +38,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
         userService.createUser(
                 registerRequest.getName(),
+                registerRequest.getUsername(),
                 registerRequest.getEmail(),
                 registerRequest.getPassword()
         );

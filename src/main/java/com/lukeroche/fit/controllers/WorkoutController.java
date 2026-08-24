@@ -1,13 +1,17 @@
 package com.lukeroche.fit.controllers;
 
-import com.lukeroche.fit.domain.dto.*;
+import com.lukeroche.fit.domain.dto.workout.*;
+import com.lukeroche.fit.domain.dto.workoutlog.*;
 import com.lukeroche.fit.domain.entities.PlannedSetEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
+import com.lukeroche.fit.domain.entities.WorkoutLogEntity;
 import com.lukeroche.fit.mappers.PlannedSetMapper;
 import com.lukeroche.fit.mappers.WorkoutExerciseMapper;
+import com.lukeroche.fit.mappers.WorkoutLogMapper;
 import com.lukeroche.fit.mappers.WorkoutMapper;
 import com.lukeroche.fit.services.ExerciseService;
+import com.lukeroche.fit.services.WorkoutLogService;
 import com.lukeroche.fit.services.WorkoutService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
@@ -32,12 +36,18 @@ public class WorkoutController {
 
     private PlannedSetMapper plannedSetMapper;
 
-    public WorkoutController(WorkoutService workoutService, ExerciseService exerciseService, WorkoutMapper workoutMapper, WorkoutExerciseMapper workoutExerciseMapper, PlannedSetMapper plannedSetMapper) {
+    private WorkoutLogService workoutLogService;
+
+    private WorkoutLogMapper workoutLogMapper;
+
+    public WorkoutController(WorkoutService workoutService, ExerciseService exerciseService, WorkoutMapper workoutMapper, WorkoutExerciseMapper workoutExerciseMapper, PlannedSetMapper plannedSetMapper, WorkoutLogService workoutLogService, WorkoutLogMapper workoutLogMapper) {
         this.workoutService = workoutService;
         this.exerciseService = exerciseService;
         this.workoutMapper = workoutMapper;
         this.workoutExerciseMapper = workoutExerciseMapper;
         this.plannedSetMapper = plannedSetMapper;
+        this.workoutLogService = workoutLogService;
+        this.workoutLogMapper = workoutLogMapper;
     }
 
 
@@ -214,5 +224,18 @@ public class WorkoutController {
         }
         workoutService.removePlannedSet(workoutExerciseId, setId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PostMapping(path = "/workouts/{workoutId}/start-session")
+    public ResponseEntity<WorkoutLogResponse> startSession(
+            @PathVariable Long workoutId,
+            @RequestBody(required = false) StartSessionRequest startSessionRequest,
+            HttpServletRequest request) {
+        UUID userId = (UUID) request.getAttribute("userId");
+        if (!workoutService.isOwnedByUser(workoutId, userId)) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        WorkoutLogEntity workoutLog = workoutLogService.startSession(workoutId, userId, startSessionRequest);
+        return new ResponseEntity<>(workoutLogMapper.toResponse(workoutLog), HttpStatus.CREATED);
     }
 }

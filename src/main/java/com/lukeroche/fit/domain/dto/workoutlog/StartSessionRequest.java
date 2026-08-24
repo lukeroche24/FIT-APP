@@ -1,4 +1,4 @@
-package com.lukeroche.fit.domain.dto;
+package com.lukeroche.fit.domain.dto.workoutlog;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdateWorkoutExerciseRequest {
+public class StartSessionRequest {
 
-    private Long orderIndex;
+    private String name;
 }

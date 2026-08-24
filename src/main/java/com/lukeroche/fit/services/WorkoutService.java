@@ -1,8 +1,8 @@
 package com.lukeroche.fit.services;
 
-import com.lukeroche.fit.domain.dto.PlannedSetRequest;
-import com.lukeroche.fit.domain.dto.UpdateWorkoutExerciseRequest;
-import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
+import com.lukeroche.fit.domain.dto.workout.PlannedSetRequest;
+import com.lukeroche.fit.domain.dto.workout.UpdateWorkoutExerciseRequest;
+import com.lukeroche.fit.domain.dto.workout.AddWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.entities.PlannedSetEntity;
 import com.lukeroche.fit.domain.entities.WorkoutEntity;
 import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
@@ -40,5 +40,7 @@ public interface WorkoutService {
     void removePlannedSet(Long workoutExerciseId, Long setId);
 
     boolean plannedSetBelongsToWorkoutExercise(Long setId, Long workoutExerciseId);
+
+    WorkoutEntity copyWorkoutLogToLibrary(Long workoutLogId, UUID copyingUserId);
 
 }

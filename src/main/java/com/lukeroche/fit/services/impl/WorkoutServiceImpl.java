@@ -1,16 +1,10 @@
 package com.lukeroche.fit.services.impl;
 
-import com.lukeroche.fit.domain.dto.PlannedSetRequest;
-import com.lukeroche.fit.domain.dto.UpdateWorkoutExerciseRequest;
-import com.lukeroche.fit.domain.dto.AddWorkoutExerciseRequest;
-import com.lukeroche.fit.domain.entities.ExerciseEntity;
-import com.lukeroche.fit.domain.entities.PlannedSetEntity;
-import com.lukeroche.fit.domain.entities.WorkoutEntity;
-import com.lukeroche.fit.domain.entities.WorkoutExerciseEntity;
-import com.lukeroche.fit.repositories.ExerciseRepository;
-import com.lukeroche.fit.repositories.PlannedSetRepository;
-import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
-import com.lukeroche.fit.repositories.WorkoutRepository;
+import com.lukeroche.fit.domain.dto.workout.PlannedSetRequest;
+import com.lukeroche.fit.domain.dto.workout.UpdateWorkoutExerciseRequest;
+import com.lukeroche.fit.domain.dto.workout.AddWorkoutExerciseRequest;
+import com.lukeroche.fit.domain.entities.*;
+import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.WorkoutService;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -30,11 +24,21 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private ExerciseRepository exerciseRepository;
 
-    public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository, WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository) {
+    private final WorkoutLogRepository workoutLogRepository;
+    private final LoggedExerciseRepository loggedExerciseRepository;
+    private final LoggedSetRepository loggedSetRepository;
+
+    public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository,
+                               WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository,
+                               WorkoutLogRepository workoutLogRepository, LoggedExerciseRepository loggedExerciseRepository,
+                               LoggedSetRepository loggedSetRepository) {
         this.workoutRepository = workoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.exerciseRepository = exerciseRepository;
         this.plannedSetRepository = plannedSetRepository;
+        this.workoutLogRepository = workoutLogRepository;
+        this.loggedExerciseRepository = loggedExerciseRepository;
+        this.loggedSetRepository = loggedSetRepository;
     }
 
     @Override
@@ -186,5 +190,60 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     public boolean plannedSetBelongsToWorkoutExercise(Long setId, Long workoutExerciseId) {
         return plannedSetRepository.existsByIdAndWorkoutExerciseEntity_Id(setId, workoutExerciseId);
+    }
+
+    // Copies produce entirely independent rows (new ExerciseEntity/WorkoutExerciseEntity/PlannedSetEntity,
+    // no foreign key back to the source) - if the friend later renames/deletes their exercise or the
+    // source log, this copy is unaffected. Mirrors WorkoutLogServiceImpl.startSession's in-memory-graph
+    // approach (append to the already-held parent reference rather than re-fetching by id within the
+    // same transaction, which previously hit a Hibernate first-level-cache staleness bug).
+    @Override
+    @Transactional
+    public WorkoutEntity copyWorkoutLogToLibrary(Long workoutLogId, UUID copyingUserId) {
+        WorkoutLogEntity sourceLog = workoutLogRepository.findById(workoutLogId)
+                .orElseThrow(() -> new RuntimeException("Workout log does not exist"));
+
+        WorkoutEntity newWorkout = workoutRepository.save(WorkoutEntity.builder()
+                .createdByUserId(copyingUserId)
+                .name(sourceLog.getName())
+                .description("Copied from a friend's session")
+                .visibility(false)
+                .build());
+
+        List<LoggedExerciseEntity> sourceLoggedExercises =
+                loggedExerciseRepository.findByWorkoutLogEntity_IdOrderByOrderIndexAsc(workoutLogId);
+
+        for (LoggedExerciseEntity loggedExercise : sourceLoggedExercises) {
+            ExerciseEntity sourceExercise = loggedExercise.getExerciseEntity();
+            ExerciseEntity newExercise = exerciseRepository.save(ExerciseEntity.builder()
+                    .name(sourceExercise.getName())
+                    .description(sourceExercise.getDescription())
+                    .createdByUserId(copyingUserId)
+                    .build());
+
+            WorkoutExerciseEntity newWorkoutExercise = workoutExerciseRepository.save(WorkoutExerciseEntity.builder()
+                    .workoutEntity(newWorkout)
+                    .exerciseEntity(newExercise)
+                    .orderIndex(loggedExercise.getOrderIndex())
+                    .build());
+
+            List<PlannedSetEntity> newPlannedSets = loggedSetRepository
+                    .findByLoggedExerciseEntity_IdOrderBySetNumberAsc(loggedExercise.getId()).stream()
+                    .map(loggedSet -> PlannedSetEntity.builder()
+                            .workoutExerciseEntity(newWorkoutExercise)
+                            .setNumber(loggedSet.getSetNumber())
+                            .targetReps(loggedSet.getActualReps())
+                            .targetWeight(loggedSet.getActualWeight())
+                            .targetDurationSeconds(loggedSet.getActualDurationSeconds())
+                            .restTimeSeconds(null)
+                            .build())
+                    .toList();
+            plannedSetRepository.saveAll(newPlannedSets);
+
+            newWorkoutExercise.setPlannedSets(newPlannedSets);
+            newWorkout.getWorkoutExercises().add(newWorkoutExercise);
+        }
+
+        return newWorkout;
     }
 }

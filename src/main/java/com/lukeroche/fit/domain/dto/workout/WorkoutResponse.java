@@ -1,4 +1,4 @@
-package com.lukeroche.fit.domain.dto;
+package com.lukeroche.fit.domain.dto.workout;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
