@@ -13,7 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "logged_exercises")
+@Table(name = "logged_exercises", indexes = {
+        @Index(name = "idx_logged_exercises_workout_log", columnList = "workout_log_id"),
+        @Index(name = "idx_logged_exercises", columnList = "exercise_id")
+})
 public class LoggedExerciseEntity extends BaseEntity {
 
     private Long orderIndex;

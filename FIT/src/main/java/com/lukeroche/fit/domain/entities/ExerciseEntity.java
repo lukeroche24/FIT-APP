@@ -21,4 +21,9 @@ public class ExerciseEntity extends BaseEntity{
 
     private UUID createdByUserId;
 
+    @Enumerated(EnumType.STRING)
+    private LoadingType loadingType;
+
+    private Double loadStep;
+
 }

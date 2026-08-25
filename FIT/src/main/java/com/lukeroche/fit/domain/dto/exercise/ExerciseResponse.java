@@ -1,5 +1,6 @@
 package com.lukeroche.fit.domain.dto.exercise;
 
+import com.lukeroche.fit.domain.entities.LoadingType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,5 +24,9 @@ public class ExerciseResponse {
     private UUID createdByUserId;
 
     private Date createdAt;
+
+    private LoadingType loadingType;
+
+    private Double loadStep;
 
 }

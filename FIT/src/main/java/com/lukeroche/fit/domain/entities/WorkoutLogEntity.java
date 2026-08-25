@@ -15,7 +15,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "workout_logs")
+@Table(name = "workout_logs", indexes = {
+        @Index(name = "idx_workout_logs_user_completed", columnList = "created_by_user_id, completed_at")
+})
 public class WorkoutLogEntity extends BaseEntity {
 
     private UUID createdByUserId;

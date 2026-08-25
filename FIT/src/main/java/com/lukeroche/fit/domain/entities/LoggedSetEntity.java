@@ -1,9 +1,6 @@
 package com.lukeroche.fit.domain.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -15,7 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "logged_sets")
+@Table(name = "logged_sets", indexes = {
+        @Index(name = "idx_logged_sets_logged_exercise", columnList = "logged_exercise_id")
+})
 public class LoggedSetEntity extends BaseEntity {
 
     @ManyToOne
@@ -27,6 +26,10 @@ public class LoggedSetEntity extends BaseEntity {
     private Integer actualReps;
 
     private Float actualWeight;
+
+    private Integer targetReps;
+
+    private Float targetWeight;
 
     //private Integer actualDurationSeconds;
 
