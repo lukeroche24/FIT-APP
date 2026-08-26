@@ -1,6 +1,8 @@
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
+import com.lukeroche.fit.domain.entities.LoadingType;
+import com.lukeroche.fit.domain.entities.SetTracking;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -34,17 +36,31 @@ public class ProgressionRecommender {
             resolvedMax = swap;
         }
 
-        if (exercise.getLoadingType() == com.lukeroche.fit.domain.entities.LoadingType.BODYWEIGHT) {
+        boolean bodyweight = exercise.getLoadingType() == LoadingType.BODYWEIGHT;
+        boolean loadedBodyweight = bodyweight && SetTracking.tracksWeight(exercise.getTracksWeight());
+
+        if (last.failed() && state != ProgressionState.REGRESSING) {
+            if (bodyweight && !loadedBodyweight) {
+                return new Recommendation(state, last.reps(), null);
+            }
+            if (inRange(last.reps(), resolvedMin, resolvedMax)) {
+                return new Recommendation(state, last.reps(), last.weight());
+            }
+            return convertToMin(state, last, resolvedMin, scheme);
+        }
+
+        if (bodyweight && !loadedBodyweight) {
             int nextReps = state == ProgressionState.REGRESSING
                     ? Math.max(resolvedMin, last.reps() - 1)
                     : last.reps() + 1;
-            return new Recommendation(state, nextReps, 0.0);
+            return new Recommendation(state, nextReps, null);
         }
 
         return switch (state) {
-            case NEW -> new Recommendation(state, last.reps(), last.weight());
-            case PROGRESSING, PLATEAU -> progressOrHold(state, last, resolvedMin, resolvedMax, scheme);
-            case REGRESSING -> deload(last, scheme);
+            case NEW, PROGRESSING, PLATEAU -> progressOrHold(state, last, resolvedMin, resolvedMax, scheme);
+            case REGRESSING -> loadedBodyweight && last.weight() <= 0
+                    ? new Recommendation(state, Math.max(resolvedMin, last.reps() - 1), 0.0)
+                    : deload(last, scheme);
         };
     }
 
@@ -53,19 +69,36 @@ public class ProgressionRecommender {
                                         int minReps,
                                         int maxReps,
                                         LoadingScheme scheme) {
-        if (state == ProgressionState.PLATEAU) {
-            return new Recommendation(state, last.reps(), last.weight());
+        if (inRange(last.reps(), minReps, maxReps)) {
+            if (state == ProgressionState.PLATEAU) {
+                return new Recommendation(state, last.reps(), last.weight());
+            }
+
+            if (last.reps() < maxReps) {
+                return new Recommendation(state, last.reps() + 1, last.weight());
+            }
+
+            OptionalDouble nextWeight = scheme.nextAbove(last.weight());
+            if (nextWeight.isEmpty()) {
+                return new Recommendation(state, last.reps(), last.weight());
+            }
+            return new Recommendation(state, minReps, nextWeight.getAsDouble());
         }
 
-        if (last.reps() < maxReps) {
-            return new Recommendation(state, last.reps() + 1, last.weight());
-        }
+        return convertToMin(state, last, minReps, scheme);
+    }
 
-        OptionalDouble nextWeight = scheme.nextAbove(last.weight());
-        if (nextWeight.isEmpty()) {
-            return new Recommendation(state, last.reps(), last.weight());
-        }
-        return new Recommendation(state, minReps, nextWeight.getAsDouble());
+    private static boolean inRange(int reps, int minReps, int maxReps) {
+        return reps >= minReps && reps <= maxReps;
+    }
+
+    private static Recommendation convertToMin(ProgressionState state,
+                                               SessionStrength last,
+                                               int minReps,
+                                               LoadingScheme scheme) {
+        double oneRm = OneRepMax.epley(last.weight(), last.reps());
+        double suggested = OneRepMax.weightForReps(oneRm, minReps);
+        return new Recommendation(state, minReps, scheme.nearest(suggested));
     }
 
     private Recommendation deload(SessionStrength last, LoadingScheme scheme) {
