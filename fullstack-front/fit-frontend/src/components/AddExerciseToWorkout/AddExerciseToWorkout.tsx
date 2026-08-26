@@ -1,26 +1,24 @@
 import { useEffect, useState } from "react";
 import { listExercises } from "../../api/exercises";
 import type { ExerciseResponse } from "../../api/exercises";
-import { addWorkoutExercise } from "../../api/workouts";
-import type { WorkoutExerciseResponse } from "../../api/workouts";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import ExerciseForm from "../ExerciseForm/ExerciseForm";
 import "./AddExerciseToWorkout.css";
 
 interface Props {
-  workoutId: number;
-  onAdded: (workoutExercise: WorkoutExerciseResponse) => void;
+  onPicked: (exercise: ExerciseResponse, minReps?: number, maxReps?: number) => void;
   onCancel: () => void;
 }
 
-function AddExerciseToWorkout({ workoutId, onAdded, onCancel }: Props) {
+function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
   const [exercises, setExercises] = useState<ExerciseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [creatingNew, setCreatingNew] = useState(false);
-  const [addingId, setAddingId] = useState<number | null>(null);
+  const [minReps, setMinReps] = useState("6");
+  const [maxReps, setMaxReps] = useState("12");
 
   useEffect(() => {
     listExercises()
@@ -29,37 +27,55 @@ function AddExerciseToWorkout({ workoutId, onAdded, onCancel }: Props) {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSelect = async (exercise: ExerciseResponse) => {
-    setError(null);
-    setAddingId(exercise.id);
-    try {
-      const workoutExercise = await addWorkoutExercise(workoutId, exercise.id);
-      onAdded(workoutExercise);
-    } catch (err) {
-      setError(toErrorMessage(err, "Failed to add exercise"));
-    } finally {
-      setAddingId(null);
-    }
+  const parsedMin = minReps === "" ? undefined : Number(minReps);
+  const parsedMax = maxReps === "" ? undefined : Number(maxReps);
+
+  const handleSelect = (exercise: ExerciseResponse) => {
+    onPicked(exercise, parsedMin, parsedMax);
   };
 
-  const handleCreatedAndAdd = async (created: ExerciseResponse) => {
+  const handleCreatedAndAdd = (created: ExerciseResponse) => {
     setExercises((prev) => [...prev, created]);
-    try {
-      const workoutExercise = await addWorkoutExercise(workoutId, created.id);
-      onAdded(workoutExercise);
-    } catch (err) {
-      setError(`Exercise created, but couldn't add it to the workout: ${toErrorMessage(err, "add it from the list")}`);
-      setCreatingNew(false);
-    }
+    onPicked(created, parsedMin, parsedMax);
   };
 
   if (creatingNew) {
     return (
-      <ExerciseForm
-        onSaved={handleCreatedAndAdd}
-        onDeleted={() => {}}
-        onCancel={() => setCreatingNew(false)}
-      />
+      <div className="p-3">
+        <div className="row mb-3">
+          <div className="col">
+            <label htmlFor="newMinReps" className="form-label">
+              Min reps for this workout
+            </label>
+            <input
+              id="newMinReps"
+              type="number"
+              min="1"
+              className="form-control"
+              value={minReps}
+              onChange={(e) => setMinReps(e.target.value)}
+            />
+          </div>
+          <div className="col">
+            <label htmlFor="newMaxReps" className="form-label">
+              Max reps for this workout
+            </label>
+            <input
+              id="newMaxReps"
+              type="number"
+              min="1"
+              className="form-control"
+              value={maxReps}
+              onChange={(e) => setMaxReps(e.target.value)}
+            />
+          </div>
+        </div>
+        <ExerciseForm
+          onSaved={handleCreatedAndAdd}
+          onDeleted={() => {}}
+          onCancel={() => setCreatingNew(false)}
+        />
+      </div>
     );
   }
 
@@ -71,6 +87,34 @@ function AddExerciseToWorkout({ workoutId, onAdded, onCancel }: Props) {
     <div className="p-3">
       <h2>Add Exercise</h2>
       <ErrorBanner message={error} />
+      <div className="row mb-3">
+        <div className="col">
+          <label htmlFor="minReps" className="form-label">
+            Min reps
+          </label>
+          <input
+            id="minReps"
+            type="number"
+            min="1"
+            className="form-control"
+            value={minReps}
+            onChange={(e) => setMinReps(e.target.value)}
+          />
+        </div>
+        <div className="col">
+          <label htmlFor="maxReps" className="form-label">
+            Max reps
+          </label>
+          <input
+            id="maxReps"
+            type="number"
+            min="1"
+            className="form-control"
+            value={maxReps}
+            onChange={(e) => setMaxReps(e.target.value)}
+          />
+        </div>
+      </div>
       <input
         type="text"
         className="form-control mb-3"
@@ -88,7 +132,7 @@ function AddExerciseToWorkout({ workoutId, onAdded, onCancel }: Props) {
             role="button"
             onClick={() => handleSelect(exercise)}
           >
-            {addingId === exercise.id ? "Adding..." : exercise.name}
+            {exercise.name}
           </li>
         ))}
       </ul>

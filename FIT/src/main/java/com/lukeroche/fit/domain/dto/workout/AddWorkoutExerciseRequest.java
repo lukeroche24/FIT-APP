@@ -13,4 +13,8 @@ public class AddWorkoutExerciseRequest {
 
     private Long exerciseId;
 
+    private Integer minReps;
+
+    private Integer maxReps;
+
 }

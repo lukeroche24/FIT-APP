@@ -12,4 +12,8 @@ import lombok.NoArgsConstructor;
 public class UpdateWorkoutExerciseRequest {
 
     private Long orderIndex;
+
+    private Integer minReps;
+
+    private Integer maxReps;
 }

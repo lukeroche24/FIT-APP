@@ -28,6 +28,10 @@ public class WorkoutExerciseEntity extends BaseEntity{
     @JoinColumn(name = "exercise_id")
     private ExerciseEntity exerciseEntity;
 
+    private Integer minReps;
+
+    private Integer maxReps;
+
     @OneToMany(mappedBy = "workoutExerciseEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PlannedSetEntity> plannedSets = new ArrayList<>();

@@ -7,6 +7,8 @@ import com.lukeroche.fit.domain.entities.*;
 import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.FriendshipService;
 import com.lukeroche.fit.services.WorkoutLogService;
+import com.lukeroche.fit.services.progression.ProgressionService;
+import com.lukeroche.fit.services.progression.Recommendation;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     private final PlannedSetRepository plannedSetRepository;
     private final ExerciseRepository exerciseRepository;
     private final FriendshipService friendshipService;
+    private final ProgressionService progressionService;
 
     public WorkoutLogServiceImpl(WorkoutLogRepository workoutLogRepository,
                                   LoggedExerciseRepository loggedExerciseRepository,
@@ -36,7 +39,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                                   WorkoutExerciseRepository workoutExerciseRepository,
                                   PlannedSetRepository plannedSetRepository,
                                   ExerciseRepository exerciseRepository,
-                                  FriendshipService friendshipService) {
+                                  FriendshipService friendshipService,
+                                  ProgressionService progressionService) {
         this.workoutLogRepository = workoutLogRepository;
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
@@ -45,6 +49,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         this.plannedSetRepository = plannedSetRepository;
         this.exerciseRepository = exerciseRepository;
         this.friendshipService = friendshipService;
+        this.progressionService = progressionService;
     }
 
     @Override
@@ -75,16 +80,33 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
             List<PlannedSetEntity> plannedSets =
                     plannedSetRepository.findByWorkoutExerciseEntity_IdOrderBySetNumberAsc(workoutExercise.getId());
 
+            Recommendation suggestion = progressionService.forExercise(
+                    userId,
+                    workoutExercise.getExerciseEntity(),
+                    workoutExercise.getMinReps(),
+                    workoutExercise.getMaxReps());
+
             List<LoggedSetEntity> loggedSets = plannedSets.stream()
-                    .map(plannedSet -> LoggedSetEntity.builder()
-                            .loggedExerciseEntity(loggedExercise)
-                            .setNumber(plannedSet.getSetNumber())
-                            .loggedAt(null)
-                            .build())
+                    .map(plannedSet -> {
+                        Integer reps = suggestion.targetReps() != null
+                                ? suggestion.targetReps()
+                                : plannedSet.getTargetReps();
+                        Float weight = suggestion.targetWeight() != null
+                                ? Float.valueOf(suggestion.targetWeight().floatValue())
+                                : plannedSet.getTargetWeight();
+                        return LoggedSetEntity.builder()
+                                .loggedExerciseEntity(loggedExercise)
+                                .setNumber(plannedSet.getSetNumber())
+                                .actualReps(reps)
+                                .actualWeight(weight)
+                                .targetReps(reps)
+                                .targetWeight(weight)
+                                .loggedAt(null)
+                                .build();
+                    })
                     .toList();
             loggedSetRepository.saveAll(loggedSets);
-
-            loggedExercise.setLoggedSets(loggedSets);
+            loggedExercise.getLoggedSets().addAll(loggedSets);
             workoutLog.getLoggedExercises().add(loggedExercise);
         }
 
@@ -163,17 +185,36 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     }
 
     @Override
+    @Transactional
     public LoggedSetEntity addLoggedSet(Long loggedExerciseId, LoggedSetRequest request) {
         LoggedExerciseEntity loggedExercise = loggedExerciseRepository.findById(loggedExerciseId).orElseThrow();
+
+        Integer reps = request != null ? request.getActualReps() : null;
+        Float weight = request != null ? request.getActualWeight() : null;
+        String notes = request != null ? request.getNotes() : null;
+
+        if (reps == null || weight == null) {
+            Recommendation suggestion = progressionService.forExercise(
+                    loggedExercise.getWorkoutLogEntity().getCreatedByUserId(),
+                    loggedExercise.getExerciseEntity());
+            if (reps == null) {
+                reps = suggestion.targetReps();
+            }
+            if (weight == null && suggestion.targetWeight() != null) {
+                weight = suggestion.targetWeight().floatValue();
+            }
+        }
 
         LoggedSetEntity loggedSet = LoggedSetEntity.builder()
                 .loggedExerciseEntity(loggedExercise)
                 .setNumber((int) (loggedSetRepository.countByLoggedExerciseEntity_Id(loggedExerciseId) + 1))
-                .actualReps(request.getActualReps())
-                .actualWeight(request.getActualWeight())
+                .actualReps(reps)
+                .actualWeight(weight)
+                .targetReps(reps)
+                .targetWeight(weight)
                 //.actualDurationSeconds(request.getActualDurationSeconds())
                 //.actualDistance(request.getActualDistance())
-                .notes(request.getNotes())
+                .notes(notes)
                 .loggedAt(null)
                 .build();
 

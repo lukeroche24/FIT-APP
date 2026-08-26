@@ -22,6 +22,10 @@ public class WorkoutExerciseResponse {
 
     private ExerciseResponse exercise;
 
+    private Integer minReps;
+
+    private Integer maxReps;
+
     private List<PlannedSetResponse> plannedSets;
 
 }

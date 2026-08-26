@@ -6,12 +6,15 @@ import com.lukeroche.fit.domain.dto.workout.AddWorkoutExerciseRequest;
 import com.lukeroche.fit.domain.entities.*;
 import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.WorkoutService;
+import com.lukeroche.fit.services.progression.LoadingTypeSuggestion;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,12 +29,13 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     private final WorkoutLogRepository workoutLogRepository;
     private final LoggedExerciseRepository loggedExerciseRepository;
+    private final LoadingTypeSuggestion loadingTypeSuggestion;
     private final LoggedSetRepository loggedSetRepository;
 
     public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository,
-                               WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository,
-                               WorkoutLogRepository workoutLogRepository, LoggedExerciseRepository loggedExerciseRepository,
-                               LoggedSetRepository loggedSetRepository) {
+                              WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository,
+                              WorkoutLogRepository workoutLogRepository, LoggedExerciseRepository loggedExerciseRepository,
+                              LoggedSetRepository loggedSetRepository, LoadingTypeSuggestion loadingTypeSuggestion) {
         this.workoutRepository = workoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.exerciseRepository = exerciseRepository;
@@ -39,6 +43,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         this.workoutLogRepository = workoutLogRepository;
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
+        this.loadingTypeSuggestion = loadingTypeSuggestion;
     }
 
     @Override
@@ -86,10 +91,20 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         ExerciseEntity exercise = exerciseRepository.findByIdAndCreatedByUserId(request.getExerciseId(), userId).orElseThrow();
 
+        int minReps = request.getMinReps() == null ? 6 : request.getMinReps();
+        int maxReps = request.getMaxReps() == null ? 12 : request.getMaxReps();
+        if (minReps > maxReps) {
+            int swap = minReps;
+            minReps = maxReps;
+            maxReps = swap;
+        }
+
         WorkoutExerciseEntity workoutExercise = WorkoutExerciseEntity.builder()
                 .workoutEntity(workout)
                 .exerciseEntity(exercise)
                 .orderIndex(workoutExerciseRepository.countByWorkoutEntity_Id(workoutId) + 1)
+                .minReps(minReps)
+                .maxReps(maxReps)
                 .build();
 
         return workoutExerciseRepository.save(workoutExercise);
@@ -105,6 +120,13 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .filter(workoutExerciseEntity -> workoutExerciseEntity.getId().equals(workoutExerciseID))
                 .findFirst()
                 .orElseThrow();
+
+        Optional.ofNullable(workoutExerciseRequest.getMinReps()).ifPresent(reorderedExercise::setMinReps);
+        Optional.ofNullable(workoutExerciseRequest.getMaxReps()).ifPresent(reorderedExercise::setMaxReps);
+
+        if (workoutExerciseRequest.getOrderIndex() == null) {
+            return workoutExerciseRepository.save(reorderedExercise);
+        }
 
         int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex()) - 1;
 
@@ -192,11 +214,9 @@ public class WorkoutServiceImpl implements WorkoutService {
         return plannedSetRepository.existsByIdAndWorkoutExerciseEntity_Id(setId, workoutExerciseId);
     }
 
-    // Copies produce entirely independent rows (new ExerciseEntity/WorkoutExerciseEntity/PlannedSetEntity,
-    // no foreign key back to the source) - if the friend later renames/deletes their exercise or the
-    // source log, this copy is unaffected. Mirrors WorkoutLogServiceImpl.startSession's in-memory-graph
-    // approach (append to the already-held parent reference rather than re-fetching by id within the
-    // same transaction, which previously hit a Hibernate first-level-cache staleness bug).
+    // Copies produce independent workout/set rows (no FK back to the source log). Exercises are reused
+    // from the copier's library when the name already exists, otherwise a new library row is created.
+    // If the friend later renames/deletes their exercise or the source log, this copy is unaffected.
     @Override
     @Transactional
     public WorkoutEntity copyWorkoutLogToLibrary(Long workoutLogId, UUID copyingUserId) {
@@ -205,7 +225,7 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         WorkoutEntity newWorkout = workoutRepository.save(WorkoutEntity.builder()
                 .createdByUserId(copyingUserId)
-                .name(sourceLog.getName())
+                .name(uniqueWorkoutName(sourceLog.getName(), copyingUserId))
                 .description("Copied from a friend's session")
                 .visibility(false)
                 .build());
@@ -213,18 +233,20 @@ public class WorkoutServiceImpl implements WorkoutService {
         List<LoggedExerciseEntity> sourceLoggedExercises =
                 loggedExerciseRepository.findByWorkoutLogEntity_IdOrderByOrderIndexAsc(workoutLogId);
 
+        Map<Long, ExerciseEntity> exercisesBySourceId = new HashMap<>();
+
         for (LoggedExerciseEntity loggedExercise : sourceLoggedExercises) {
             ExerciseEntity sourceExercise = loggedExercise.getExerciseEntity();
-            ExerciseEntity newExercise = exerciseRepository.save(ExerciseEntity.builder()
-                    .name(sourceExercise.getName())
-                    .description(sourceExercise.getDescription())
-                    .createdByUserId(copyingUserId)
-                    .build());
+            ExerciseEntity libraryExercise = exercisesBySourceId.computeIfAbsent(
+                    sourceExercise.getId(),
+                    unused -> resolveLibraryExercise(sourceExercise, copyingUserId));
 
             WorkoutExerciseEntity newWorkoutExercise = workoutExerciseRepository.save(WorkoutExerciseEntity.builder()
                     .workoutEntity(newWorkout)
-                    .exerciseEntity(newExercise)
+                    .exerciseEntity(libraryExercise)
                     .orderIndex(loggedExercise.getOrderIndex())
+                    .minReps(6)
+                    .maxReps(12)
                     .build());
 
             List<PlannedSetEntity> newPlannedSets = loggedSetRepository
@@ -245,5 +267,34 @@ public class WorkoutServiceImpl implements WorkoutService {
         }
 
         return newWorkout;
+    }
+
+    private ExerciseEntity resolveLibraryExercise(ExerciseEntity sourceExercise, UUID copyingUserId) {
+        return exerciseRepository
+                .findFirstByCreatedByUserIdAndNameIgnoreCase(copyingUserId, sourceExercise.getName())
+                .orElseGet(() -> {
+                    ExerciseEntity copy = ExerciseEntity.builder()
+                            .name(sourceExercise.getName())
+                            .description(sourceExercise.getDescription())
+                            .createdByUserId(copyingUserId)
+                            .loadingType(sourceExercise.getLoadingType())
+                            .loadStep(sourceExercise.getLoadStep())
+                            .build();
+                    loadingTypeSuggestion.applyDefaults(copy);
+                    return exerciseRepository.save(copy);
+                });
+    }
+
+    private String uniqueWorkoutName(String baseName, UUID copyingUserId) {
+        if (!workoutRepository.existsByCreatedByUserIdAndNameIgnoreCase(copyingUserId, baseName)) {
+            return baseName;
+        }
+        int suffix = 2;
+        String candidate;
+        do {
+            candidate = baseName + "(" + suffix + ")";
+            suffix++;
+        } while (workoutRepository.existsByCreatedByUserIdAndNameIgnoreCase(copyingUserId, candidate));
+        return candidate;
     }
 }
