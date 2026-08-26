@@ -8,6 +8,10 @@ public record SetHistoryRow(
     LocalDateTime completedAt,
     Integer setNumber,
     Integer actualReps,
-    Float actualWeight) {
+    Float actualWeight,
+    Integer rightReps,
+    Float rightWeight,
+    Boolean failed,
+    Boolean rightFailed) {
 
 }

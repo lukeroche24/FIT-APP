@@ -27,14 +27,19 @@ public interface LoggedSetRepository extends CrudRepository<LoggedSetEntity, Lon
                 wl.completedAt,
                 ls.setNumber,
                 ls.actualReps,
-                ls.actualWeight)
+                ls.actualWeight,
+                ls.rightReps,
+                ls.rightWeight,
+                ls.failed,
+                ls.rightFailed)
             FROM LoggedSetEntity ls
                 join ls.loggedExerciseEntity le
                 join le.workoutLogEntity wl
             WHERE wl.createdByUserId = :userId
                 AND le.exerciseEntity.id = :exerciseId
                 AND wl.completedAt IS NOT NULL
-                AND ls.actualReps > 0
+                AND ((ls.actualReps IS NOT NULL AND ls.actualReps > 0)
+                    OR (ls.rightReps IS NOT NULL AND ls.rightReps > 0))
             ORDER BY wl.completedAt asc, ls.setNumber asc
 """)
     List<SetHistoryRow> findCompletedSetHistory(@Param("userId") UUID userId,
