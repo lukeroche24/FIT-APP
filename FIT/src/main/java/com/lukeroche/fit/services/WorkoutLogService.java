@@ -18,6 +18,8 @@ public interface WorkoutLogService {
 
     Page<WorkoutLogEntity> findAllForUser(UUID userId, Pageable pageable);
 
+    Optional<WorkoutLogEntity> findInProgressForUser(UUID userId);
+
     Optional<WorkoutLogEntity> findOneForUser(Long id, UUID userId);
 
     boolean isOwnedByUser(Long id, UUID userId);

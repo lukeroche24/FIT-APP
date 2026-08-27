@@ -1,8 +1,16 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import Logout from "../Logout/Logout";
 import "./NavBar.css";
 
 function NavBar() {
+  const { inProgress } = useActiveSession();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const onInProgressPage = Boolean(
+    inProgress && location.pathname === `/workout-logs/${inProgress.id}`,
+  );
+
   return (
     <div className="app-navbar">
       <div className="app-navbar-inner">
@@ -31,7 +39,20 @@ function NavBar() {
           <NavLink to="/feed" className="app-navbar-link">
             Feed
           </NavLink>
+          <NavLink to="/profile" className="app-navbar-link">
+            Profile
+          </NavLink>
         </nav>
+        {inProgress && !onInProgressPage && (
+          <button
+            type="button"
+            className="app-navbar-resume"
+            onClick={() => navigate(`/workout-logs/${inProgress.id}`)}
+            title={`Resume ${inProgress.name}`}
+          >
+            Resume {inProgress.name}
+          </button>
+        )}
         <Logout />
       </div>
     </div>

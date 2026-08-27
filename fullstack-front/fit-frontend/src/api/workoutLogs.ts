@@ -1,5 +1,5 @@
 import { authHeaders, handleJsonResponse } from "./http";
-import type { ExerciseResponse } from "./exercises";
+import type { ExerciseResponse, LimbPattern } from "./exercises";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
@@ -15,9 +15,13 @@ export interface WorkoutLogRequest {
 export interface LoggedSetRequest {
   actualReps?: number;
   actualWeight?: number;
-  //actualDurationSeconds?: number;
-  //actualDistance?: number;
+  rightReps?: number;
+  rightWeight?: number;
+  actualDurationSeconds?: number;
+  actualDistance?: number;
   notes?: string;
+  failed?: boolean;
+  rightFailed?: boolean;
 }
 
 export interface LoggedSetResponse {
@@ -25,9 +29,13 @@ export interface LoggedSetResponse {
   setNumber: number;
   actualReps: number | null;
   actualWeight: number | null;
-  //actualDurationSeconds: number | null;
-  //actualDistance: number | null;
+  rightReps: number | null;
+  rightWeight: number | null;
+  actualDurationSeconds: number | null;
+  actualDistance: number | null;
   notes: string | null;
+  failed?: boolean | null;
+  rightFailed?: boolean | null;
   loggedAt: string | null;
 }
 
@@ -36,6 +44,11 @@ export interface LoggedExerciseResponse {
   orderIndex: number;
   notes: string | null;
   exercise: ExerciseResponse;
+  tracksWeight?: boolean | null;
+  tracksDuration?: boolean | null;
+  tracksDistance?: boolean | null;
+  limbPattern?: LimbPattern | null;
+  independentLoads?: boolean | null;
   loggedSets: LoggedSetResponse[];
 }
 
@@ -49,6 +62,12 @@ export interface WorkoutLogResponse {
   completedAt: string | null;
   createdAt: string;
   loggedExercises: LoggedExerciseResponse[];
+}
+
+export interface InProgressSession {
+  id: number;
+  name: string;
+  startedAt: string;
 }
 
 interface WorkoutLogPage {
@@ -74,6 +93,16 @@ export function listWorkoutLogs(): Promise<WorkoutLogResponse[]> {
   })
     .then((response) => handleJsonResponse<WorkoutLogPage>(response))
     .then((page) => page.content);
+}
+
+export function getInProgressSession(): Promise<InProgressSession | null> {
+  return fetch(`${API_URL}/workout-logs/in-progress`, {
+    method: "GET",
+    headers: authHeaders(),
+  }).then((response) => {
+    if (response.status === 404) return null;
+    return handleJsonResponse<InProgressSession>(response);
+  });
 }
 
 export function getWorkoutLog(id: number): Promise<WorkoutLogResponse> {

@@ -3,6 +3,7 @@ import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { deleteWorkoutLog, listWorkoutLogs } from "../../api/workoutLogs";
 import type { WorkoutLogResponse } from "../../api/workoutLogs";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
@@ -12,6 +13,7 @@ import "./WorkoutLogList.css";
 function WorkoutLogList() {
   const isAuthenticated = useRequireAuth();
   const navigate = useNavigate();
+  const { clearInProgress } = useActiveSession();
 
   const [workoutLogs, setWorkoutLogs] = useState<WorkoutLogResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,7 @@ function WorkoutLogList() {
     try {
       await deleteWorkoutLog(id);
       setWorkoutLogs((prev) => prev.filter((log) => log.id !== id));
+      clearInProgress(id);
     } catch (err) {
       setError(toErrorMessage(err, "Failed to delete session"));
     }

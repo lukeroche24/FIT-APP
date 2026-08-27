@@ -9,6 +9,7 @@ import com.lukeroche.fit.services.FriendshipService;
 import com.lukeroche.fit.services.WorkoutLogService;
 import com.lukeroche.fit.services.progression.ProgressionService;
 import com.lukeroche.fit.services.progression.Recommendation;
+import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     private final ExerciseRepository exerciseRepository;
     private final FriendshipService friendshipService;
     private final ProgressionService progressionService;
+    private final LoadingSchemeFactory loadingSchemeFactory;
 
     public WorkoutLogServiceImpl(WorkoutLogRepository workoutLogRepository,
                                   LoggedExerciseRepository loggedExerciseRepository,
@@ -40,7 +42,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                                   PlannedSetRepository plannedSetRepository,
                                   ExerciseRepository exerciseRepository,
                                   FriendshipService friendshipService,
-                                  ProgressionService progressionService) {
+                                  ProgressionService progressionService,
+                                  LoadingSchemeFactory loadingSchemeFactory) {
         this.workoutLogRepository = workoutLogRepository;
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
@@ -50,6 +53,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         this.exerciseRepository = exerciseRepository;
         this.friendshipService = friendshipService;
         this.progressionService = progressionService;
+        this.loadingSchemeFactory = loadingSchemeFactory;
     }
 
     @Override
@@ -75,6 +79,13 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                     .workoutLogEntity(workoutLog)
                     .exerciseEntity(workoutExercise.getExerciseEntity())
                     .orderIndex(workoutExercise.getOrderIndex())
+                    .tracksWeight(SetTracking.tracksWeight(workoutExercise.getTracksWeight()))
+                    .tracksDuration(SetTracking.tracksDuration(workoutExercise.getTracksDuration()))
+                    .tracksDistance(SetTracking.tracksDistance(workoutExercise.getTracksDistance()))
+                    .limbPattern(Laterality.pattern(workoutExercise.getExerciseEntity().getLimbPattern()))
+                    .independentLoads(Laterality.independentLoads(
+                            workoutExercise.getExerciseEntity().getIndependentLoads(),
+                            workoutExercise.getExerciseEntity().getLoadingType()))
                     .build());
 
             List<PlannedSetEntity> plannedSets =
@@ -91,16 +102,40 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                         Integer reps = suggestion.targetReps() != null
                                 ? suggestion.targetReps()
                                 : plannedSet.getTargetReps();
-                        Float weight = suggestion.targetWeight() != null
-                                ? Float.valueOf(suggestion.targetWeight().floatValue())
-                                : plannedSet.getTargetWeight();
+                        Float weight = null;
+                        if (SetTracking.tracksWeight(workoutExercise.getTracksWeight())) {
+                            weight = suggestion.targetWeight() != null
+                                    ? Float.valueOf(suggestion.targetWeight().floatValue())
+                                    : plannedSet.getTargetWeight();
+                        }
+                        boolean unilateral = Laterality.isUnilateral(workoutExercise.getExerciseEntity().getLimbPattern());
+                        Integer rightReps = null;
+                        Float rightWeight = null;
+                        if (unilateral) {
+                            rightReps = plannedSet.getRightReps() != null ? plannedSet.getRightReps() : reps;
+                            if (SetTracking.tracksWeight(workoutExercise.getTracksWeight())) {
+                                rightWeight = plannedSet.getRightWeight() != null
+                                        ? plannedSet.getRightWeight()
+                                        : weight;
+                            }
+                        }
+                        weight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), weight);
+                        rightWeight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), rightWeight);
                         return LoggedSetEntity.builder()
                                 .loggedExerciseEntity(loggedExercise)
                                 .setNumber(plannedSet.getSetNumber())
                                 .actualReps(reps)
                                 .actualWeight(weight)
+                                .rightReps(rightReps)
+                                .rightWeight(rightWeight)
                                 .targetReps(reps)
                                 .targetWeight(weight)
+                                .actualDurationSeconds(SetTracking.tracksDuration(workoutExercise.getTracksDuration())
+                                        ? plannedSet.getTargetDurationSeconds()
+                                        : null)
+                                .actualDistance(SetTracking.tracksDistance(workoutExercise.getTracksDistance())
+                                        ? plannedSet.getTargetDistance()
+                                        : null)
                                 .loggedAt(null)
                                 .build();
                     })
@@ -116,6 +151,11 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     @Override
     public Page<WorkoutLogEntity> findAllForUser(UUID userId, Pageable pageable) {
         return workoutLogRepository.findByCreatedByUserId(userId, pageable);
+    }
+
+    @Override
+    public Optional<WorkoutLogEntity> findInProgressForUser(UUID userId) {
+        return workoutLogRepository.findFirstByCreatedByUserIdAndCompletedAtIsNullOrderByStartedAtDesc(userId);
     }
 
     @Override
@@ -160,6 +200,11 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                 .workoutLogEntity(workoutLog)
                 .exerciseEntity(exercise)
                 .orderIndex(loggedExerciseRepository.countByWorkoutLogEntity_Id(workoutLogId) + 1)
+                .tracksWeight(SetTracking.tracksWeight(exercise.getTracksWeight()))
+                .tracksDuration(SetTracking.tracksDuration(exercise.getTracksDuration()))
+                .tracksDistance(SetTracking.tracksDistance(exercise.getTracksDistance()))
+                .limbPattern(Laterality.pattern(exercise.getLimbPattern()))
+                .independentLoads(Laterality.independentLoads(exercise.getIndependentLoads(), exercise.getLoadingType()))
                 .build();
 
         return loggedExerciseRepository.save(loggedExercise);
@@ -191,30 +236,51 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
 
         Integer reps = request != null ? request.getActualReps() : null;
         Float weight = request != null ? request.getActualWeight() : null;
+        Integer duration = request != null ? request.getActualDurationSeconds() : null;
+        Float distance = request != null ? request.getActualDistance() : null;
+        Integer rightReps = request != null ? request.getRightReps() : null;
+        Float rightWeight = request != null ? request.getRightWeight() : null;
         String notes = request != null ? request.getNotes() : null;
 
-        if (reps == null || weight == null) {
+        if (reps == null || (SetTracking.tracksWeight(loggedExercise.getTracksWeight()) && weight == null)) {
             Recommendation suggestion = progressionService.forExercise(
                     loggedExercise.getWorkoutLogEntity().getCreatedByUserId(),
                     loggedExercise.getExerciseEntity());
             if (reps == null) {
                 reps = suggestion.targetReps();
             }
-            if (weight == null && suggestion.targetWeight() != null) {
+            if (weight == null && suggestion.targetWeight() != null
+                    && SetTracking.tracksWeight(loggedExercise.getTracksWeight())) {
                 weight = suggestion.targetWeight().floatValue();
             }
         }
+
+        if (Laterality.isUnilateral(loggedExercise.getLimbPattern())) {
+            if (rightReps == null) {
+                rightReps = reps;
+            }
+            if (rightWeight == null && SetTracking.tracksWeight(loggedExercise.getTracksWeight())) {
+                rightWeight = weight;
+            }
+        }
+
+        weight = loadingSchemeFactory.snapWeight(loggedExercise.getExerciseEntity(), weight);
+        rightWeight = loadingSchemeFactory.snapWeight(loggedExercise.getExerciseEntity(), rightWeight);
 
         LoggedSetEntity loggedSet = LoggedSetEntity.builder()
                 .loggedExerciseEntity(loggedExercise)
                 .setNumber((int) (loggedSetRepository.countByLoggedExerciseEntity_Id(loggedExerciseId) + 1))
                 .actualReps(reps)
                 .actualWeight(weight)
+                .rightReps(rightReps)
+                .rightWeight(rightWeight)
                 .targetReps(reps)
                 .targetWeight(weight)
-                //.actualDurationSeconds(request.getActualDurationSeconds())
-                //.actualDistance(request.getActualDistance())
+                .actualDurationSeconds(duration)
+                .actualDistance(distance)
                 .notes(notes)
+                .failed(request != null && Boolean.TRUE.equals(request.getFailed()))
+                .rightFailed(request != null && Boolean.TRUE.equals(request.getRightFailed()))
                 .loggedAt(null)
                 .build();
 
@@ -222,13 +288,21 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     }
 
     @Override
+    @Transactional
     public LoggedSetEntity updateLoggedSet(Long setId, LoggedSetRequest request) {
         return loggedSetRepository.findById(setId).map(existingSet -> {
+            ExerciseEntity exercise = existingSet.getLoggedExerciseEntity().getExerciseEntity();
             Optional.ofNullable(request.getActualReps()).ifPresent(existingSet::setActualReps);
-            Optional.ofNullable(request.getActualWeight()).ifPresent(existingSet::setActualWeight);
-            //Optional.ofNullable(request.getActualDurationSeconds()).ifPresent(existingSet::setActualDurationSeconds);
-            //Optional.ofNullable(request.getActualDistance()).ifPresent(existingSet::setActualDistance);
+            Optional.ofNullable(request.getActualWeight())
+                    .ifPresent(weight -> existingSet.setActualWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
+            Optional.ofNullable(request.getRightReps()).ifPresent(existingSet::setRightReps);
+            Optional.ofNullable(request.getRightWeight())
+                    .ifPresent(weight -> existingSet.setRightWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
+            Optional.ofNullable(request.getActualDurationSeconds()).ifPresent(existingSet::setActualDurationSeconds);
+            Optional.ofNullable(request.getActualDistance()).ifPresent(existingSet::setActualDistance);
             Optional.ofNullable(request.getNotes()).ifPresent(existingSet::setNotes);
+            Optional.ofNullable(request.getFailed()).ifPresent(existingSet::setFailed);
+            Optional.ofNullable(request.getRightFailed()).ifPresent(existingSet::setRightFailed);
             existingSet.setLoggedAt(LocalDateTime.now());
             return loggedSetRepository.save(existingSet);
         }).orElseThrow(() -> new RuntimeException("Logged set does not exist"));

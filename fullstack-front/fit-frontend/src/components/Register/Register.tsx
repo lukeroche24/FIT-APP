@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../../api/auth";
 import { setToken } from "../../api/token";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
@@ -16,6 +17,7 @@ function Register() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { refresh } = useActiveSession();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -24,6 +26,7 @@ function Register() {
     try {
       const response = await register({ name, username, email, password });
       setToken(response.token);
+      await refresh();
       navigate("/");
     } catch (err) {
       setError(toErrorMessage(err, "Registration failed"));

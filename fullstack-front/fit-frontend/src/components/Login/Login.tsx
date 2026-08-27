@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../api/auth";
 import { setToken } from "../../api/token";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
@@ -14,6 +15,7 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { refresh } = useActiveSession();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,7 @@ function Login() {
     try {
       const response = await login({ email, password });
       setToken(response.token);
+      await refresh();
       navigate("/");
     } catch (err) {
       setError(toErrorMessage(err, "Login failed"));

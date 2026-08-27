@@ -57,7 +57,19 @@ public class WorkoutLogController {
         return workoutLogs.map(workoutLogMapper::toResponse);
     }
 
-    @GetMapping(path = "/workout-logs/{id}")
+    @GetMapping(path = "/workout-logs/in-progress")
+    public ResponseEntity<InProgressSessionResponse> getInProgressSession(HttpServletRequest request) {
+        UUID userId = (UUID) request.getAttribute("userId");
+        return workoutLogService.findInProgressForUser(userId)
+                .map(log -> ResponseEntity.ok(InProgressSessionResponse.builder()
+                        .id(log.getId())
+                        .name(log.getName())
+                        .startedAt(log.getStartedAt())
+                        .build()))
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping(path = "/workout-logs/{id:\\d+}")
     public ResponseEntity<WorkoutLogResponse> getWorkoutLog(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
         Optional<WorkoutLogEntity> foundLog = workoutLogService.findOneForUser(id, userId);

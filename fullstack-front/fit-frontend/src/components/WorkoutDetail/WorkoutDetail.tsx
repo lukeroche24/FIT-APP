@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getWorkout, persistWorkoutEdits } from "../../api/workouts";
 import type { ExerciseResponse } from "../../api/exercises";
 import type { PlannedSetRequest, WorkoutExerciseResponse, WorkoutResponse } from "../../api/workouts";
-import { startSession } from "../../api/workoutLogs";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
@@ -12,6 +12,9 @@ import Modal from "../Modal/Modal";
 import PageLayout from "../PageLayout/PageLayout";
 import AddExerciseToWorkout from "../AddExerciseToWorkout/AddExerciseToWorkout";
 import PlannedSetRow from "../PlannedSetRow/PlannedSetRow";
+import TrackingCheckboxes from "../TrackingCheckboxes/TrackingCheckboxes";
+import { trackingFrom, type TrackingFlags } from "../../utils/tracking";
+import { lateralityFrom, perSideHint } from "../../utils/laterality";
 import "./WorkoutDetail.css";
 
 interface WorkoutPageState {
@@ -38,6 +41,7 @@ function WorkoutDetail() {
   const workoutId = Number(id);
   const navigate = useNavigate();
   const location = useLocation();
+  const { startOrResume } = useActiveSession();
   const isNewFromNav = Boolean((location.state as WorkoutPageState | null)?.isNew);
 
   const [workout, setWorkout] = useState<WorkoutResponse | null>(null);
@@ -83,8 +87,8 @@ function WorkoutDetail() {
     }
 
     try {
-      const log = await startSession(workout.id, {});
-      navigate(`/workout-logs/${log.id}`);
+      const session = await startOrResume(workout.id);
+      navigate(`/workout-logs/${session.id}`);
     } catch (err) {
       setError(toErrorMessage(err, "Failed to start session"));
     }
@@ -122,7 +126,14 @@ function WorkoutDetail() {
     }
   };
 
-  const handleExercisePicked = (exercise: ExerciseResponse, minReps?: number, maxReps?: number) => {
+  const handleExercisePicked = (
+    exercise: ExerciseResponse,
+    minReps?: number,
+    maxReps?: number,
+    tracking?: TrackingFlags,
+  ) => {
+    const flags = tracking ?? trackingFrom(exercise);
+    const limbs = lateralityFrom(exercise);
     setExercises((prev) => [
       ...prev,
       {
@@ -132,6 +143,11 @@ function WorkoutDetail() {
         exercise,
         minReps: minReps ?? 6,
         maxReps: maxReps ?? 12,
+        tracksWeight: flags.tracksWeight,
+        tracksDuration: flags.tracksDuration,
+        tracksDistance: flags.tracksDistance,
+        limbPattern: limbs.limbPattern,
+        independentLoads: limbs.independentLoads,
         plannedSets: [],
       },
     ]);
@@ -140,6 +156,21 @@ function WorkoutDetail() {
 
   const handleRemoveExercise = (workoutExerciseId: number) => {
     setExercises((prev) => prev.filter((workoutExercise) => workoutExercise.id !== workoutExerciseId));
+  };
+
+  const handleUpdateTracking = (workoutExerciseId: number, tracking: TrackingFlags) => {
+    setExercises((prev) =>
+      prev.map((workoutExercise) =>
+        workoutExercise.id === workoutExerciseId
+          ? {
+              ...workoutExercise,
+              tracksWeight: tracking.tracksWeight,
+              tracksDuration: tracking.tracksDuration,
+              tracksDistance: tracking.tracksDistance,
+            }
+          : workoutExercise,
+      ),
+    );
   };
 
   const handleUpdateRepRange = (
@@ -169,7 +200,10 @@ function WorkoutDetail() {
               setNumber: workoutExercise.plannedSets.length + 1,
               targetReps: null,
               targetWeight: null,
+              rightReps: null,
+              rightWeight: null,
               targetDurationSeconds: null,
+              targetDistance: null,
               restTimeSeconds: null,
             },
           ],
@@ -192,7 +226,10 @@ function WorkoutDetail() {
                   ...set,
                   targetReps: request.targetReps ?? null,
                   targetWeight: request.targetWeight ?? null,
+                  rightReps: request.rightReps ?? null,
+                  rightWeight: request.rightWeight ?? null,
                   targetDurationSeconds: request.targetDurationSeconds ?? null,
+                  targetDistance: request.targetDistance ?? null,
                   restTimeSeconds: request.restTimeSeconds ?? null,
                 }
               : set,
@@ -376,10 +413,27 @@ function WorkoutDetail() {
                 </small>
               )}
             </div>
+            {editing && (
+              <div className="mb-2">
+                <div className="form-label small mb-1">Log per set</div>
+                <TrackingCheckboxes
+                  idPrefix={`we-${workoutExercise.id}-`}
+                  value={trackingFrom(workoutExercise)}
+                  onChange={(next) => handleUpdateTracking(workoutExercise.id, next)}
+                />
+              </div>
+            )}
+            {perSideHint(lateralityFrom(workoutExercise.exercise)) && (
+              <div className="form-text mb-2">{perSideHint(lateralityFrom(workoutExercise.exercise))}</div>
+            )}
             {workoutExercise.plannedSets.map((set) => (
               <PlannedSetRow
                 key={set.id}
                 set={set}
+                tracking={trackingFrom(workoutExercise)}
+                laterality={lateralityFrom(workoutExercise.exercise)}
+                addedLoad={workoutExercise.exercise.loadingType === "BODYWEIGHT"}
+                loadStep={workoutExercise.exercise.loadStep}
                 readOnly={!editing}
                 onUpdate={(request) => handleUpdateSet(workoutExercise.id, set.id, request)}
                 onRemove={() => handleRemoveSet(workoutExercise.id, set.id)}

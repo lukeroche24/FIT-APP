@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { listExercises } from "../../api/exercises";
 import { listWorkouts } from "../../api/workouts";
-import { listWorkoutLogs, startSession } from "../../api/workoutLogs";
+import { listWorkoutLogs } from "../../api/workoutLogs";
 import type { WorkoutLogResponse } from "../../api/workoutLogs";
 import { getNextWorkout } from "../../api/plans";
 import type { UpcomingWorkoutResponse } from "../../api/plans";
+import { useActiveSession } from "../../hooks/ActiveSession";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
@@ -15,6 +16,7 @@ import "./Home.css";
 function Home() {
   const isAuthenticated = useRequireAuth();
   const navigate = useNavigate();
+  const { startOrResume } = useActiveSession();
 
   const [exerciseCount, setExerciseCount] = useState(0);
   const [workoutCount, setWorkoutCount] = useState(0);
@@ -49,8 +51,8 @@ function Home() {
     }
 
     try {
-      const log = await startSession(nextWorkout.workout.id, {});
-      navigate(`/workout-logs/${log.id}`);
+      const session = await startOrResume(nextWorkout.workout.id);
+      navigate(`/workout-logs/${session.id}`);
     } catch (err) {
       setError(toErrorMessage(err, "Failed to start session"));
     }
@@ -75,7 +77,7 @@ function Home() {
       )}
       {!isLoading && !nextWorkout && (
         <p className="text-muted mb-4">
-          No plan active. <Link to="/plans">Set up a Plan</Link> to see what's coming up.
+          No upcoming planned workout. <Link to="/plans">View Plans</Link>
         </p>
       )}
 

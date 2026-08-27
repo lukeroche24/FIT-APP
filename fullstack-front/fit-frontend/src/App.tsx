@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ActiveSessionProvider } from "./hooks/ActiveSession";
 import Home from "./components/Home/Home";
 import ExerciseLibrary from "./components/ExerciseLibrary/ExerciseLibrary";
 import WorkoutList from "./components/WorkoutList/WorkoutList";
@@ -11,12 +12,15 @@ import CurrentPlan from "./components/CurrentPlan/CurrentPlan";
 import Login from "./components/Login/Login";
 import Register from "./components/Register/Register";
 import Friends from "./components/Friends/Friends";
+import FriendProfile from "./components/FriendProfile/FriendProfile";
 import Feed from "./components/Feed/Feed";
+import Profile from "./components/Profile/Profile";
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <ActiveSessionProvider>
+        <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/exercises" element={<ExerciseLibrary />} />
         <Route path="/workouts" element={<WorkoutList />} />
@@ -27,10 +31,13 @@ function App() {
         <Route path="/plans/current" element={<CurrentPlan />} />
         <Route path="/plans/:id" element={<PlanBuilder />} />
         <Route path="/friends" element={<Friends />} />
+        <Route path="/friends/:userId" element={<FriendProfile />} />
         <Route path="/feed" element={<Feed />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-      </Routes>
+        </Routes>
+      </ActiveSessionProvider>
     </BrowserRouter>
   );
 }
