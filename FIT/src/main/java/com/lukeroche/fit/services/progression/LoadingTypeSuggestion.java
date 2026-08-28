@@ -2,6 +2,7 @@ package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
 import com.lukeroche.fit.domain.entities.LoadingType;
+import com.lukeroche.fit.domain.entities.SetTracking;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -37,8 +38,12 @@ public class LoadingTypeSuggestion {
         }
 
         if (exerciseEntity.getLoadStep() == null
-                && exerciseEntity.getLoadingType() != LoadingType.BODYWEIGHT) {
-            if (exerciseEntity.getLoadingType() == LoadingType.DUMBBELL) {
+                || exerciseEntity.getLoadStep() <= 0) {
+            if (exerciseEntity.getLoadingType() == LoadingType.BODYWEIGHT) {
+                if (SetTracking.tracksWeight(exerciseEntity.getTracksWeight())) {
+                    exerciseEntity.setLoadStep(2.5);
+                }
+            } else if (exerciseEntity.getLoadingType() == LoadingType.DUMBBELL) {
                 exerciseEntity.setLoadStep(2.0);
             } else if (exerciseEntity.getLoadingType() == LoadingType.MACHINE) {
                 exerciseEntity.setLoadStep(5.0);

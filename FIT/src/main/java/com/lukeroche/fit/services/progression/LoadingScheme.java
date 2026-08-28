@@ -7,4 +7,6 @@ public interface LoadingScheme {
     double nearest(double target);
 
     OptionalDouble nextAbove(double current);
+
+    double snap(double weight);
 }

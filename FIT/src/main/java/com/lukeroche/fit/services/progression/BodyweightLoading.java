@@ -13,4 +13,9 @@ public final class BodyweightLoading implements LoadingScheme {
     public OptionalDouble nextAbove(double current) {
         return OptionalDouble.empty();
     }
+
+    @Override
+    public double snap(double weight) {
+        return 0;
+    }
 }
