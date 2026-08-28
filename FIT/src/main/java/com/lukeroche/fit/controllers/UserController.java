@@ -1,17 +1,24 @@
 package com.lukeroche.fit.controllers;
 
 import com.lukeroche.fit.domain.dto.friend.UserSearchResult;
+import com.lukeroche.fit.domain.dto.plan.PlanResponse;
+import com.lukeroche.fit.domain.dto.plan.UpcomingWorkoutResponse;
 import com.lukeroche.fit.domain.dto.user.MeResponse;
 import com.lukeroche.fit.domain.dto.user.UpdateProfileRequest;
 import com.lukeroche.fit.domain.dto.user.UpdateProfileResponse;
 import com.lukeroche.fit.domain.dto.user.UserProfileResponse;
 import com.lukeroche.fit.domain.entities.User;
+import com.lukeroche.fit.mappers.PlanMapper;
 import com.lukeroche.fit.services.AuthenticationService;
 import com.lukeroche.fit.services.FriendshipService;
+import com.lukeroche.fit.services.PlanService;
 import com.lukeroche.fit.services.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,15 +41,21 @@ public class UserController {
     private final FriendshipService friendshipService;
     private final AuthenticationService authenticationService;
     private final UserDetailsService userDetailsService;
+    private final PlanService planService;
+    private final PlanMapper planMapper;
 
     public UserController(UserService userService,
                           FriendshipService friendshipService,
                           AuthenticationService authenticationService,
-                          UserDetailsService userDetailsService) {
+                          UserDetailsService userDetailsService,
+                          PlanService planService,
+                          PlanMapper planMapper) {
         this.userService = userService;
         this.friendshipService = friendshipService;
         this.authenticationService = authenticationService;
         this.userDetailsService = userDetailsService;
+        this.planService = planService;
+        this.planMapper = planMapper;
     }
 
     @GetMapping(path = "/users/me")
@@ -76,6 +91,25 @@ public class UserController {
         return userService.getVisibleProfile(userId, id);
     }
 
+    @GetMapping(path = "/users/{id}/plan")
+    public ResponseEntity<PlanResponse> getVisibleActivePlan(@PathVariable("id") UUID id, HttpServletRequest request) {
+        UUID viewerId = (UUID) request.getAttribute("userId");
+        requireVisibleProfile(viewerId, id);
+        return planService.getActiveForUser(id)
+                .map(plan -> new ResponseEntity<>(planMapper.toResponse(plan), HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping(path = "/users/{id}/plan/upcoming")
+    public List<UpcomingWorkoutResponse> getVisibleUpcoming(
+            @PathVariable("id") UUID id,
+            @RequestParam(name = "weeks", defaultValue = "4") int weeks,
+            HttpServletRequest request) {
+        UUID viewerId = (UUID) request.getAttribute("userId");
+        requireVisibleProfile(viewerId, id);
+        return planService.getUpcoming(id, LocalDate.now(), weeks);
+    }
+
     @GetMapping(path = "/users/search")
     public Page<UserSearchResult> search(@RequestParam("query") String query, Pageable pageable, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
@@ -86,5 +120,11 @@ public class UserController {
                 .name(u.getName())
                 .relationshipStatus(friendshipService.relationshipStatus(userId, u.getId()))
                 .build());
+    }
+
+    private void requireVisibleProfile(UUID viewerId, UUID targetId) {
+        if (!viewerId.equals(targetId) && !friendshipService.isFriend(viewerId, targetId)) {
+            throw new EntityNotFoundException("User not found");
+        }
     }
 }

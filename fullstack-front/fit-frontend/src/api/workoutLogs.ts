@@ -1,4 +1,5 @@
 import { authHeaders, handleJsonResponse } from "./http";
+import { buildPageQuery, type ListPage } from "./paging";
 import type { ExerciseResponse, LimbPattern } from "./exercises";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -70,9 +71,21 @@ export interface InProgressSession {
   startedAt: string;
 }
 
-interface WorkoutLogPage {
-  content: WorkoutLogResponse[];
-  totalElements: number;
+export function listWorkoutLogs(options?: {
+  query?: string;
+  page?: number;
+  size?: number;
+}): Promise<ListPage<WorkoutLogResponse>> {
+  return fetch(
+    `${API_URL}/workout-logs?${buildPageQuery({
+      ...options,
+      sort: "startedAt,desc",
+    })}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+    },
+  ).then((response) => handleJsonResponse<ListPage<WorkoutLogResponse>>(response));
 }
 
 export function startSession(
@@ -84,15 +97,6 @@ export function startSession(
     headers: authHeaders(),
     body: JSON.stringify(request),
   }).then((response) => handleJsonResponse<WorkoutLogResponse>(response));
-}
-
-export function listWorkoutLogs(): Promise<WorkoutLogResponse[]> {
-  return fetch(`${API_URL}/workout-logs?size=200`, {
-    method: "GET",
-    headers: authHeaders(),
-  })
-    .then((response) => handleJsonResponse<WorkoutLogPage>(response))
-    .then((page) => page.content);
 }
 
 export function getInProgressSession(): Promise<InProgressSession | null> {

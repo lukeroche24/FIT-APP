@@ -51,9 +51,12 @@ public class WorkoutLogController {
     }
 
     @GetMapping(path = "/workout-logs")
-    public Page<WorkoutLogResponse> listWorkoutLogs(Pageable pageable, HttpServletRequest request) {
+    public Page<WorkoutLogResponse> listWorkoutLogs(
+            @RequestParam(required = false) String query,
+            Pageable pageable,
+            HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Page<WorkoutLogEntity> workoutLogs = workoutLogService.findAllForUser(userId, pageable);
+        Page<WorkoutLogEntity> workoutLogs = workoutLogService.findAllForUser(userId, query, pageable);
         return workoutLogs.map(workoutLogMapper::toResponse);
     }
 
@@ -72,7 +75,7 @@ public class WorkoutLogController {
     @GetMapping(path = "/workout-logs/{id:\\d+}")
     public ResponseEntity<WorkoutLogResponse> getWorkoutLog(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Optional<WorkoutLogEntity> foundLog = workoutLogService.findOneForUser(id, userId);
+        Optional<WorkoutLogEntity> foundLog = workoutLogService.findVisibleToUser(id, userId);
         return foundLog.map(workoutLogEntity -> {
             WorkoutLogResponse workoutLogResponse = workoutLogMapper.toResponse(workoutLogEntity);
             return new ResponseEntity<>(workoutLogResponse, HttpStatus.OK);

@@ -50,9 +50,16 @@ function chunk(items: UpcomingWorkoutResponse[], size: number): UpcomingWorkoutR
 interface CurrentPlanScheduleProps {
   plan: PlanResponse | null;
   onDelete?: (id: number) => void;
+  readOnly?: boolean;
+  loadUpcoming?: (weeks: number) => Promise<UpcomingWorkoutResponse[]>;
 }
 
-export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps) {
+export function CurrentPlanSchedule({
+  plan,
+  onDelete,
+  readOnly = false,
+  loadUpcoming,
+}: CurrentPlanScheduleProps) {
   const navigate = useNavigate();
   const { startOrResume } = useActiveSession();
 
@@ -63,10 +70,10 @@ export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps
   const [assigningDay, setAssigningDay] = useState<number | null>(null);
 
   const loadSchedule = useCallback(async (active: PlanResponse) => {
-    const list = await getUpcomingWorkouts(active.weeks);
+    const list = await (loadUpcoming ?? getUpcomingWorkouts)(active.weeks);
     setUpcoming(list);
     setWeekOffset(weekOffsetForToday(list));
-  }, []);
+  }, [loadUpcoming]);
 
   useEffect(() => {
     if (!plan) {
@@ -110,6 +117,10 @@ export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps
 
     if (day.status === "COMPLETED" && day.workoutLogId) {
       navigate(`/workout-logs/${day.workoutLogId}`);
+      return;
+    }
+
+    if (readOnly) {
       return;
     }
 
@@ -172,7 +183,11 @@ export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps
     return (
       <div className="mb-4">
         <h2 className="h4">Current Plan</h2>
-        <p className="text-muted mb-0">No plan is active. Activate one from the list below.</p>
+        <p className="text-muted mb-0">
+          {readOnly
+            ? "No plan is active."
+            : "No plan is active. Activate one from the list below."}
+        </p>
       </div>
     );
   }
@@ -213,10 +228,12 @@ export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps
           >
             Next Week &rarr;
           </button>
-          <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(`/plans/${plan.id}`)}>
-            Edit Plan
-          </button>
-          {onDelete && (
+          {!readOnly && (
+            <button type="button" className="btn btn-outline-secondary" onClick={() => navigate(`/plans/${plan.id}`)}>
+              Edit Plan
+            </button>
+          )}
+          {!readOnly && onDelete && (
             <button type="button" className="btn btn-outline-danger" onClick={() => onDelete(plan.id)}>
               Delete
             </button>
@@ -230,14 +247,16 @@ export function CurrentPlanSchedule({ plan, onDelete }: CurrentPlanScheduleProps
         <>
           <PlanDayGrid
             days={days}
+            readOnly={readOnly}
             onAssign={(dayOfWeek) => setAssigningDay(dayOfWeek)}
             onClear={handleClear}
             onMove={handleMove}
             onDayClick={handleDayClick}
           />
           <p className="text-muted small">
-            Green with a check means you finished that session. Red means the scheduled day has passed
-            without a completed log. Click a finished day to reopen it.
+            {readOnly
+              ? "Green with a check means they finished that session. Red means the scheduled day passed without a completed log. Click a finished day to view it."
+              : "Green with a check means you finished that session. Red means the scheduled day has passed without a completed log. Click a finished day to reopen it."}
           </p>
         </>
       )}

@@ -30,15 +30,16 @@ function Home() {
       return;
     }
 
-    Promise.all([listExercises(), listWorkouts(), listWorkoutLogs(), getNextWorkout()])
+    Promise.all([
+      listExercises({ page: 0, size: 1 }),
+      listWorkouts({ page: 0, size: 1 }),
+      listWorkoutLogs({ page: 0, size: 5 }),
+      getNextWorkout(),
+    ])
       .then(([exercises, workouts, logs, next]) => {
-        setExerciseCount(exercises.length);
-        setWorkoutCount(workouts.length);
-        setRecentLogs(
-          [...logs]
-            .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
-            .slice(0, 5),
-        );
+        setExerciseCount(exercises.totalElements);
+        setWorkoutCount(workouts.totalElements);
+        setRecentLogs(logs.content);
         setNextWorkout(next);
       })
       .catch((err) => setError(toErrorMessage(err, "Failed to load dashboard")))

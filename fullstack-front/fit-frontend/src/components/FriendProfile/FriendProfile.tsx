@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { unfriend } from "../../api/friends";
+import { getFriendActivePlan, getFriendUpcomingWorkouts } from "../../api/plans";
+import type { PlanResponse } from "../../api/plans";
 import { getUserProfile } from "../../api/users";
 import type { UserProfileResponse } from "../../api/users";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
+import { CurrentPlanSchedule } from "../CurrentPlan/CurrentPlan";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
 import StrengthLookup from "../StrengthLookup/StrengthLookup";
@@ -16,9 +19,15 @@ function FriendProfile() {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [activePlan, setActivePlan] = useState<PlanResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [unfriending, setUnfriending] = useState(false);
+
+  const loadUpcoming = useCallback(
+    (weeks: number) => getFriendUpcomingWorkouts(userId ?? "", weeks),
+    [userId],
+  );
 
   useEffect(() => {
     if (!isAuthenticated || !userId) {
@@ -28,8 +37,12 @@ function FriendProfile() {
     setLoading(true);
     setError(null);
     setProfile(null);
-    getUserProfile(userId)
-      .then(setProfile)
+    setActivePlan(null);
+    Promise.all([getUserProfile(userId), getFriendActivePlan(userId)])
+      .then(([nextProfile, plan]) => {
+        setProfile(nextProfile);
+        setActivePlan(plan);
+      })
       .catch((err) => setError(toErrorMessage(err, "This profile isn't available")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, userId]);
@@ -51,7 +64,7 @@ function FriendProfile() {
   };
 
   return (
-    <PageLayout>
+    <PageLayout width="wide">
       <div className="page-header">
         <h1>{profile ? profile.name : "Friend profile"}</h1>
         <Link to="/friends" className="btn btn-outline-primary btn-sm">
@@ -95,6 +108,8 @@ function FriendProfile() {
               </div>
             </div>
           </div>
+
+          <CurrentPlanSchedule plan={activePlan} readOnly loadUpcoming={loadUpcoming} />
 
           <StrengthLookup userId={profile.id} />
 
