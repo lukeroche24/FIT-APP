@@ -15,7 +15,7 @@ public interface PlanService {
 
     PlanEntity save(PlanEntity planEntity);
 
-    Page<PlanEntity> findAllForUser(UUID userId, Pageable pageable);
+    Page<PlanEntity> findAllForUser(UUID userId, String query, boolean excludeActive, Pageable pageable);
 
     Optional<PlanEntity> findOneForUser(Long id, UUID userId);
 

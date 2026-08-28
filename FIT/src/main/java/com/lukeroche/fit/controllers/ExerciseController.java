@@ -26,7 +26,9 @@ public class ExerciseController {
 
     private ExerciseMapper exerciseRequestMapper;
 
-    public ExerciseController(ExerciseService exerciseService, ExerciseMapper exerciseResponseMapper, ExerciseMapper exerciseRequestMapper) {
+    public ExerciseController(ExerciseService exerciseService,
+                              ExerciseMapper exerciseResponseMapper,
+                              ExerciseMapper exerciseRequestMapper) {
         this.exerciseService = exerciseService;
         this.exerciseResponseMapper = exerciseResponseMapper;
         this.exerciseRequestMapper = exerciseRequestMapper;
@@ -45,9 +47,12 @@ public class ExerciseController {
 
 
     @GetMapping(path = "/exercises")
-    public Page<ExerciseResponse> listExercises(Pageable pageable, HttpServletRequest request) {
+    public Page<ExerciseResponse> listExercises(
+            @RequestParam(required = false) String query,
+            Pageable pageable,
+            HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Page<ExerciseEntity> exercises = exerciseService.findAllForUser(userId, pageable);
+        Page<ExerciseEntity> exercises = exerciseService.findAllForUser(userId, query, pageable);
         return exercises.map(exerciseResponseMapper::toResponse);
     }
 

@@ -16,6 +16,14 @@ public interface PlanRepository extends CrudRepository<PlanEntity, Long>,
 
     Page<PlanEntity> findByCreatedByUserId(UUID createdByUserId, Pageable pageable);
 
+    Page<PlanEntity> findByCreatedByUserIdAndNameContainingIgnoreCase(
+            UUID createdByUserId, String name, Pageable pageable);
+
+    Page<PlanEntity> findByCreatedByUserIdAndActiveFalse(UUID createdByUserId, Pageable pageable);
+
+    Page<PlanEntity> findByCreatedByUserIdAndActiveFalseAndNameContainingIgnoreCase(
+            UUID createdByUserId, String name, Pageable pageable);
+
     Optional<PlanEntity> findByIdAndCreatedByUserId(Long id, UUID createdByUserId);
 
     boolean existsByIdAndCreatedByUserId(Long id, UUID createdByUserId);

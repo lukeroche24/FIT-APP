@@ -2,6 +2,8 @@ package com.lukeroche.fit.services.impl;
 
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
+import com.lukeroche.fit.domain.entities.LimbPattern;
+import com.lukeroche.fit.domain.entities.LoadingType;
 import com.lukeroche.fit.repositories.ExerciseRepository;
 import com.lukeroche.fit.repositories.LoggedExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
@@ -35,13 +37,18 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     public ExerciseEntity save(ExerciseEntity exerciseEntity) {
+        applyTrackingDefaults(exerciseEntity);
         loadingTypeSuggestion.applyDefaults(exerciseEntity);
+        applyLateralityDefaults(exerciseEntity);
         return exerciseRepository.save(exerciseEntity);
     }
 
     @Override
-    public Page<ExerciseEntity> findAllForUser(UUID userId, Pageable pageable) {
-        return exerciseRepository.findByCreatedByUserId(userId, pageable);
+    public Page<ExerciseEntity> findAllForUser(UUID userId, String query, Pageable pageable) {
+        if (query == null || query.isBlank()) {
+            return exerciseRepository.findByCreatedByUserId(userId, pageable);
+        }
+        return exerciseRepository.findByCreatedByUserIdAndNameContainingIgnoreCase(userId, query.trim(), pageable);
     }
 
     @Override
@@ -63,7 +70,14 @@ public class ExerciseServiceImpl implements ExerciseService {
             Optional.ofNullable(exerciseEntity.getDescription()).ifPresent((existingExercise::setDescription));
             Optional.ofNullable(exerciseEntity.getLoadStep()).ifPresent((existingExercise::setLoadStep));
             Optional.ofNullable(exerciseEntity.getLoadingType()).ifPresent((existingExercise::setLoadingType));
+            Optional.ofNullable(exerciseEntity.getTracksWeight()).ifPresent(existingExercise::setTracksWeight);
+            Optional.ofNullable(exerciseEntity.getTracksDuration()).ifPresent(existingExercise::setTracksDuration);
+            Optional.ofNullable(exerciseEntity.getTracksDistance()).ifPresent(existingExercise::setTracksDistance);
+            Optional.ofNullable(exerciseEntity.getLimbPattern()).ifPresent(existingExercise::setLimbPattern);
+            Optional.ofNullable(exerciseEntity.getIndependentLoads()).ifPresent(existingExercise::setIndependentLoads);
+            applyTrackingDefaults(existingExercise);
             loadingTypeSuggestion.applyDefaults(existingExercise);
+            applyLateralityDefaults(existingExercise);
             return exerciseRepository.save(existingExercise);
         }).orElseThrow(() -> new RuntimeException("Exercise does not exist"));
     }
@@ -76,5 +90,26 @@ public class ExerciseServiceImpl implements ExerciseService {
                     "This exercise is used in a workout or history and can't be deleted.");
         }
         exerciseRepository.deleteById(id);
+    }
+
+    private void applyTrackingDefaults(ExerciseEntity exerciseEntity) {
+        if (exerciseEntity.getTracksWeight() == null) {
+            exerciseEntity.setTracksWeight(true);
+        }
+        if (exerciseEntity.getTracksDuration() == null) {
+            exerciseEntity.setTracksDuration(false);
+        }
+        if (exerciseEntity.getTracksDistance() == null) {
+            exerciseEntity.setTracksDistance(false);
+        }
+    }
+
+    private void applyLateralityDefaults(ExerciseEntity exerciseEntity) {
+        if (exerciseEntity.getLimbPattern() == null) {
+            exerciseEntity.setLimbPattern(LimbPattern.BILATERAL);
+        }
+        if (exerciseEntity.getIndependentLoads() == null) {
+            exerciseEntity.setIndependentLoads(exerciseEntity.getLoadingType() == LoadingType.DUMBBELL);
+        }
     }
 }

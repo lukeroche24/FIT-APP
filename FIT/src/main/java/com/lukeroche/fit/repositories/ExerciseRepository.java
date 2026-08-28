@@ -47,6 +47,9 @@ public interface ExerciseRepository extends CrudRepository<ExerciseEntity, Long>
 
     Page<ExerciseEntity> findByCreatedByUserId(UUID createdByUserId, Pageable pageable);
 
+    Page<ExerciseEntity> findByCreatedByUserIdAndNameContainingIgnoreCase(
+            UUID createdByUserId, String name, Pageable pageable);
+
     Optional<ExerciseEntity> findByIdAndCreatedByUserId(Long id, UUID createdByUserId);
 
     boolean existsByIdAndCreatedByUserId(Long id, UUID createdByUserId);

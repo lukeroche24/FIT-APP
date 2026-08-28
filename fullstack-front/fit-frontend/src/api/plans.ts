@@ -1,4 +1,5 @@
 import { authHeaders, handleJsonResponse } from "./http";
+import { buildPageQuery, type ListPage } from "./paging";
 import type { WorkoutResponse } from "./workouts";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -36,18 +37,24 @@ export interface UpcomingWorkoutResponse {
   workoutLogId?: number | null;
 }
 
-interface PlanPage {
-  content: PlanResponse[];
-  totalElements: number;
-}
-
-export function listPlans(): Promise<PlanResponse[]> {
-  return fetch(`${API_URL}/plans?size=200`, {
-    method: "GET",
-    headers: authHeaders(),
-  })
-    .then((response) => handleJsonResponse<PlanPage>(response))
-    .then((page) => page.content);
+export function listPlans(options?: {
+  query?: string;
+  page?: number;
+  size?: number;
+  excludeActive?: boolean;
+}): Promise<ListPage<PlanResponse>> {
+  return fetch(
+    `${API_URL}/plans?${buildPageQuery({
+      query: options?.query,
+      page: options?.page,
+      size: options?.size,
+      extra: { excludeActive: options?.excludeActive ?? false },
+    })}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+    },
+  ).then((response) => handleJsonResponse<ListPage<PlanResponse>>(response));
 }
 
 export function getPlan(id: number): Promise<PlanResponse> {
@@ -123,8 +130,28 @@ export function getActivePlan(): Promise<PlanResponse | null> {
   });
 }
 
+export function getFriendActivePlan(userId: string): Promise<PlanResponse | null> {
+  return fetch(`${API_URL}/users/${userId}/plan`, {
+    method: "GET",
+    headers: authHeaders(),
+  }).then((response) => {
+    if (response.status === 404) return null;
+    return handleJsonResponse<PlanResponse>(response);
+  });
+}
+
 export function getUpcomingWorkouts(weeks: number): Promise<UpcomingWorkoutResponse[]> {
   return fetch(`${API_URL}/plans/active/upcoming?weeks=${weeks}`, {
+    method: "GET",
+    headers: authHeaders(),
+  }).then((response) => handleJsonResponse<UpcomingWorkoutResponse[]>(response));
+}
+
+export function getFriendUpcomingWorkouts(
+  userId: string,
+  weeks: number,
+): Promise<UpcomingWorkoutResponse[]> {
+  return fetch(`${API_URL}/users/${userId}/plan/upcoming?weeks=${weeks}`, {
     method: "GET",
     headers: authHeaders(),
   }).then((response) => handleJsonResponse<UpcomingWorkoutResponse[]>(response));

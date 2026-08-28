@@ -47,9 +47,13 @@ public class PlanController {
     }
 
     @GetMapping(path = "/plans")
-    public Page<PlanResponse> listPlans(Pageable pageable, HttpServletRequest request) {
+    public Page<PlanResponse> listPlans(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "false") boolean excludeActive,
+            Pageable pageable,
+            HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Page<PlanEntity> plans = planService.findAllForUser(userId, pageable);
+        Page<PlanEntity> plans = planService.findAllForUser(userId, query, excludeActive, pageable);
         return plans.map(planMapper::toResponse);
     }
 

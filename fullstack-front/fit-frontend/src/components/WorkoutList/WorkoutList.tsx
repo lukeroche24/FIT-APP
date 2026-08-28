@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { createWorkout, deleteWorkout, listWorkouts } from "../../api/workouts";
+import { DEFAULT_PAGE_SIZE } from "../../api/paging";
 import type { WorkoutResponse } from "../../api/workouts";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import Modal from "../Modal/Modal";
 import PageLayout from "../PageLayout/PageLayout";
+import Pager from "../Pager/Pager";
 import "./WorkoutList.css";
 
 function WorkoutList() {
@@ -15,6 +18,11 @@ function WorkoutList() {
   const navigate = useNavigate();
 
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [search, setSearch] = useState("");
+  const query = useDebouncedValue(search);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -24,15 +32,31 @@ function WorkoutList() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
+    setPage(0);
+  }, [query]);
+
+  useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
 
-    listWorkouts()
-      .then(setWorkouts)
-      .catch((err) => setError(toErrorMessage(err, "Failed to load workouts")))
-      .finally(() => setLoading(false));
-  }, [isAuthenticated]);
+    setLoading(true);
+    listWorkouts({ query, page, size: DEFAULT_PAGE_SIZE })
+      .then((result) => {
+        if (result.content.length === 0 && result.number > 0 && result.totalElements > 0) {
+          setPage(result.number - 1);
+          return;
+        }
+        setWorkouts(result.content);
+        setTotalPages(result.totalPages);
+        setTotalElements(result.totalElements);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(toErrorMessage(err, "Failed to load workouts"));
+        setLoading(false);
+      });
+  }, [isAuthenticated, query, page]);
 
   const closeModal = () => {
     setIsCreating(false);
@@ -47,8 +71,8 @@ function WorkoutList() {
     setSaving(true);
     try {
       const created = await createWorkout({ name, description, visibility: true });
-      setWorkouts((prev) => [...prev, created]);
       closeModal();
+      navigate(`/workouts/${created.id}`, { state: { isNew: true } });
     } catch (err) {
       setSaveError(toErrorMessage(err, "Failed to create workout"));
     } finally {
@@ -64,7 +88,14 @@ function WorkoutList() {
 
     try {
       await deleteWorkout(id);
-      setWorkouts((prev) => prev.filter((w) => w.id !== id));
+      const result = await listWorkouts({ query, page, size: DEFAULT_PAGE_SIZE });
+      if (result.content.length === 0 && result.number > 0 && result.totalElements > 0) {
+        setPage(result.number - 1);
+        return;
+      }
+      setWorkouts(result.content);
+      setTotalPages(result.totalPages);
+      setTotalElements(result.totalElements);
     } catch (err) {
       setError(toErrorMessage(err, "Failed to delete workout"));
     }
@@ -78,9 +109,19 @@ function WorkoutList() {
           + New Workout
         </button>
       </div>
+      <input
+        type="search"
+        className="form-control mb-3"
+        placeholder="Search workouts..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        aria-label="Search workouts"
+      />
       <ErrorBanner message={error} />
       {loading && <p>Loading...</p>}
-      {!loading && workouts.length === 0 && <p className="text-muted">No workouts yet.</p>}
+      {!loading && workouts.length === 0 && (
+        <p className="text-muted">{query ? "No workouts match that search." : "No workouts yet."}</p>
+      )}
       <ul className="list-group">
         {workouts.map((workout) => (
           <li
@@ -100,6 +141,10 @@ function WorkoutList() {
           </li>
         ))}
       </ul>
+      <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
+      {!loading && totalElements > 0 && (
+        <p className="text-muted small text-center mt-2">{totalElements} workout{totalElements === 1 ? "" : "s"}</p>
+      )}
 
       <Modal isOpen={isCreating} onClose={closeModal}>
         <div className="p-3">
@@ -131,7 +176,7 @@ function WorkoutList() {
               />
             </div>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Creating..." : "Create"}
             </button>
             <button
               type="button"

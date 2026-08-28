@@ -52,8 +52,19 @@ public class PlanServiceImpl implements PlanService {
     }
 
     @Override
-    public Page<PlanEntity> findAllForUser(UUID userId, Pageable pageable) {
-        return planRepository.findByCreatedByUserId(userId, pageable);
+    public Page<PlanEntity> findAllForUser(UUID userId, String query, boolean excludeActive, Pageable pageable) {
+        boolean hasQuery = query != null && !query.isBlank();
+        String term = hasQuery ? query.trim() : "";
+        if (excludeActive) {
+            if (!hasQuery) {
+                return planRepository.findByCreatedByUserIdAndActiveFalse(userId, pageable);
+            }
+            return planRepository.findByCreatedByUserIdAndActiveFalseAndNameContainingIgnoreCase(userId, term, pageable);
+        }
+        if (!hasQuery) {
+            return planRepository.findByCreatedByUserId(userId, pageable);
+        }
+        return planRepository.findByCreatedByUserIdAndNameContainingIgnoreCase(userId, term, pageable);
     }
 
     @Override

@@ -16,7 +16,14 @@ public interface WorkoutRepository extends CrudRepository<WorkoutEntity, Long>,
 
     Page<WorkoutEntity> findByCreatedByUserId(UUID createdByUserId, Pageable pageable);
 
+    Page<WorkoutEntity> findByCreatedByUserIdAndNameContainingIgnoreCase(
+            UUID createdByUserId, String name, Pageable pageable);
+
     Optional<WorkoutEntity> findByIdAndCreatedByUserId(Long id, UUID createdByUserId);
 
     boolean existsByIdAndCreatedByUserId(Long id, UUID createdByUserId);
+
+    boolean existsByCreatedByUserIdAndNameIgnoreCase(UUID createdByUserId, String name);
+
+    long countByCreatedByUserId(UUID createdByUserId);
 }

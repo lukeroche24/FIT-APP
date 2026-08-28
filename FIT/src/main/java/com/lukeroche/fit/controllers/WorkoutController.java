@@ -77,9 +77,12 @@ public class WorkoutController {
 
 
     @GetMapping(path = "/workouts")
-    public Page<WorkoutResponse> listWorkouts(Pageable pageable, HttpServletRequest request) {
+    public Page<WorkoutResponse> listWorkouts(
+            @RequestParam(required = false) String query,
+            Pageable pageable,
+            HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Page<WorkoutEntity> workouts = workoutService.findAllForUser(userId, pageable);
+        Page<WorkoutEntity> workouts = workoutService.findAllForUser(userId, query, pageable);
         return workouts.map(workoutMapper::toResponse);
     }
 

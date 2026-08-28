@@ -15,7 +15,7 @@ import java.util.UUID;
 public interface WorkoutService {
     WorkoutEntity save(WorkoutEntity workout);
 
-    Page<WorkoutEntity> findAllForUser(UUID userId, Pageable pageable);
+    Page<WorkoutEntity> findAllForUser(UUID userId, String query, Pageable pageable);
 
     Optional<WorkoutEntity> findOneForUser(Long id, UUID userId);
 

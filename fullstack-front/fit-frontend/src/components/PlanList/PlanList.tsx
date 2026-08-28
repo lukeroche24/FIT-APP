@@ -1,21 +1,47 @@
 import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { activatePlan, createPlan, deletePlan, listPlans } from "../../api/plans";
-import type { PlanResponse } from "../../api/plans";
+import { activatePlan, createPlan, deletePlan, getActivePlan, listPlans, type PlanResponse } from "../../api/plans";
+import { DEFAULT_PAGE_SIZE, type ListPage } from "../../api/paging";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import Modal from "../Modal/Modal";
 import PageLayout from "../PageLayout/PageLayout";
+import Pager from "../Pager/Pager";
 import { CurrentPlanSchedule } from "../CurrentPlan/CurrentPlan";
 import "./PlanList.css";
+
+function applyOtherPlansPage(
+  result: ListPage<PlanResponse>,
+  setPage: (page: number) => void,
+  setOtherPlans: (plans: PlanResponse[]) => void,
+  setTotalPages: (n: number) => void,
+  setTotalElements: (n: number) => void,
+): boolean {
+  if (result.content.length === 0 && result.number > 0 && result.totalElements > 0) {
+    setPage(result.number - 1);
+    return true;
+  }
+  setOtherPlans(result.content);
+  setTotalPages(result.totalPages);
+  setTotalElements(result.totalElements);
+  return false;
+}
 
 function PlanList() {
   const isAuthenticated = useRequireAuth();
   const navigate = useNavigate();
 
-  const [plans, setPlans] = useState<PlanResponse[]>([]);
+  const [activePlan, setActivePlan] = useState<PlanResponse | null>(null);
+  const [activeReady, setActiveReady] = useState(false);
+  const [otherPlans, setOtherPlans] = useState<PlanResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [search, setSearch] = useState("");
+  const query = useDebouncedValue(search);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -25,15 +51,43 @@ function PlanList() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
+    setPage(0);
+  }, [query]);
+
+  useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
 
-    listPlans()
-      .then(setPlans)
+    getActivePlan()
+      .then(setActivePlan)
       .catch((err) => setError(toErrorMessage(err, "Failed to load plans")))
-      .finally(() => setLoading(false));
+      .finally(() => setActiveReady(true));
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    setLoading(true);
+    listPlans({ query, page, size: DEFAULT_PAGE_SIZE, excludeActive: true })
+      .then((result) => {
+        if (applyOtherPlansPage(result, setPage, setOtherPlans, setTotalPages, setTotalElements)) {
+          return;
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(toErrorMessage(err, "Failed to load plans"));
+        setLoading(false);
+      });
+  }, [isAuthenticated, query, page]);
+
+  const reloadOtherPlans = () =>
+    listPlans({ query, page, size: DEFAULT_PAGE_SIZE, excludeActive: true }).then((result) => {
+      applyOtherPlansPage(result, setPage, setOtherPlans, setTotalPages, setTotalElements);
+    });
 
   const closeModal = () => {
     setIsCreating(false);
@@ -48,7 +102,6 @@ function PlanList() {
     setSaving(true);
     try {
       const created = await createPlan({ name, weeks });
-      setPlans((prev) => [...prev, created]);
       closeModal();
       navigate(`/plans/${created.id}`, { state: { isNew: true } });
     } catch (err) {
@@ -70,7 +123,10 @@ function PlanList() {
 
     try {
       await deletePlan(id);
-      setPlans((prev) => prev.filter((p) => p.id !== id));
+      if (activePlan?.id === id) {
+        setActivePlan(null);
+      }
+      await reloadOtherPlans();
     } catch (err) {
       setError(toErrorMessage(err, "Failed to delete plan"));
     }
@@ -80,18 +136,12 @@ function PlanList() {
     e.stopPropagation();
     try {
       const activated = await activatePlan(id);
-      setPlans((prev) =>
-        prev.map((plan) =>
-          plan.id === activated.id ? { ...activated, active: true } : { ...plan, active: false },
-        ),
-      );
+      setActivePlan(activated);
+      await reloadOtherPlans();
     } catch (err) {
       setError(toErrorMessage(err, "Failed to activate plan"));
     }
   };
-
-  const activePlan = plans.find((plan) => plan.active) ?? null;
-  const otherPlans = plans.filter((plan) => !plan.active);
 
   return (
     <PageLayout width="wide">
@@ -102,16 +152,30 @@ function PlanList() {
         </button>
       </div>
       <ErrorBanner message={error} />
-      {loading && <p>Loading...</p>}
-      {!loading && (
+      {!activeReady && <p>Loading...</p>}
+      {activeReady && <CurrentPlanSchedule plan={activePlan} onDelete={removePlan} />}
+      {activeReady && (
         <>
-          <CurrentPlanSchedule plan={activePlan} onDelete={removePlan} />
           <div className="section-label other-plans-label">{activePlan ? "Other Plans" : "Your Plans"}</div>
-          {plans.length === 0 && <p className="text-muted">No plans yet.</p>}
-          {plans.length > 0 && otherPlans.length === 0 && (
-            <p className="text-muted">No other plans. Create another one if you want a spare template.</p>
+          <input
+            type="search"
+            className="form-control mb-3"
+            placeholder="Search plans..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search plans"
+          />
+          {loading && <p>Loading...</p>}
+          {!loading && otherPlans.length === 0 && (
+            <p className="text-muted">
+              {query
+                ? "No plans match that search."
+                : activePlan
+                  ? "No other plans. Create another one if you want a spare template."
+                  : "No plans yet."}
+            </p>
           )}
-          {otherPlans.length > 0 && (
+          {!loading && otherPlans.length > 0 && (
             <ul className="list-group">
               {otherPlans.map((plan) => (
                 <li
@@ -142,6 +206,12 @@ function PlanList() {
                 </li>
               ))}
             </ul>
+          )}
+          {!loading && <Pager page={page} totalPages={totalPages} onPageChange={setPage} />}
+          {!loading && totalElements > 0 && (
+            <p className="text-muted small text-center mt-2">
+              {totalElements} plan{totalElements === 1 ? "" : "s"}
+            </p>
           )}
         </>
       )}
