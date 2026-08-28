@@ -17,6 +17,7 @@ function Profile() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,10 @@ function Profile() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
     setSaving(true);
     try {
       const updated = await updateMe({
@@ -52,6 +57,7 @@ function Profile() {
       });
       setProfile(updated);
       setPassword("");
+      setConfirmPassword("");
       setSuccess("Profile saved");
     } catch (err) {
       setError(toErrorMessage(err, "Failed to save profile"));
@@ -150,6 +156,20 @@ function Profile() {
                   className="form-control"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  placeholder="Leave blank to keep your current password"
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="confirmPassword" className="form-label">
+                  Confirm new password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  className="form-control"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
                   placeholder="Leave blank to keep your current password"
                 />
