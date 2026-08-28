@@ -1,10 +1,21 @@
 import { authHeaders, handleJsonResponse } from "./http";
+import { buildPageQuery, type ListPage } from "./paging";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+
+export type LoadingType = "BARBELL" | "DUMBBELL" | "MACHINE" | "BODYWEIGHT";
+export type LimbPattern = "BILATERAL" | "UNILATERAL" | "ALTERNATING";
 
 export interface ExerciseRequest {
   name: string;
   description: string;
+  loadingType?: LoadingType;
+  loadStep?: number;
+  tracksWeight?: boolean;
+  tracksDuration?: boolean;
+  tracksDistance?: boolean;
+  limbPattern?: LimbPattern;
+  independentLoads?: boolean;
 }
 
 export interface ExerciseResponse {
@@ -13,20 +24,24 @@ export interface ExerciseResponse {
   description: string;
   createdByUserId: string;
   createdAt: string;
+  loadingType?: LoadingType | null;
+  loadStep?: number | null;
+  tracksWeight?: boolean | null;
+  tracksDuration?: boolean | null;
+  tracksDistance?: boolean | null;
+  limbPattern?: LimbPattern | null;
+  independentLoads?: boolean | null;
 }
 
-interface ExercisePage {
-  content: ExerciseResponse[];
-  totalElements: number;
-}
-
-export function listExercises(): Promise<ExerciseResponse[]> {
-  return fetch(`${API_URL}/exercises?size=200`, {
+export function listExercises(options?: {
+  query?: string;
+  page?: number;
+  size?: number;
+}): Promise<ListPage<ExerciseResponse>> {
+  return fetch(`${API_URL}/exercises?${buildPageQuery(options)}`, {
     method: "GET",
     headers: authHeaders(),
-  })
-    .then((response) => handleJsonResponse<ExercisePage>(response))
-    .then((page) => page.content);
+  }).then((response) => handleJsonResponse<ListPage<ExerciseResponse>>(response));
 }
 
 export function getExercise(id: number): Promise<ExerciseResponse> {

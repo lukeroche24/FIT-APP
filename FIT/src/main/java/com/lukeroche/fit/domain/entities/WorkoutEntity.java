@@ -28,6 +28,7 @@ public class WorkoutEntity extends BaseEntity{
     private Boolean visibility;
 
     @OneToMany(mappedBy = "workoutEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<WorkoutExerciseEntity> workoutExercises = new ArrayList<>();
 

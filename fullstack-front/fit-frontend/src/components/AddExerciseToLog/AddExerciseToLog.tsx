@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { listExercises } from "../../api/exercises";
+import { DEFAULT_PAGE_SIZE } from "../../api/paging";
 import type { ExerciseResponse } from "../../api/exercises";
 import { addLoggedExercise } from "../../api/workoutLogs";
 import type { LoggedExerciseResponse } from "../../api/workoutLogs";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import ExerciseForm from "../ExerciseForm/ExerciseForm";
+import Pager from "../Pager/Pager";
 import "./AddExerciseToLog.css";
 
 interface Props {
@@ -16,18 +19,33 @@ interface Props {
 
 function AddExerciseToLog({ workoutLogId, onAdded, onCancel }: Props) {
   const [exercises, setExercises] = useState<ExerciseResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const query = useDebouncedValue(search);
   const [creatingNew, setCreatingNew] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
 
   useEffect(() => {
-    listExercises()
-      .then(setExercises)
+    setPage(0);
+  }, [query]);
+
+  useEffect(() => {
+    setLoading(true);
+    listExercises({ query, page, size: DEFAULT_PAGE_SIZE })
+      .then((result) => {
+        if (result.content.length === 0 && result.number > 0 && result.totalElements > 0) {
+          setPage(result.number - 1);
+          return;
+        }
+        setExercises(result.content);
+        setTotalPages(result.totalPages);
+      })
       .catch((err) => setError(toErrorMessage(err, "Failed to load exercises")))
       .finally(() => setLoading(false));
-  }, []);
+  }, [query, page]);
 
   const handleSelect = async (exercise: ExerciseResponse) => {
     setError(null);
@@ -43,7 +61,6 @@ function AddExerciseToLog({ workoutLogId, onAdded, onCancel }: Props) {
   };
 
   const handleCreatedAndAdd = async (created: ExerciseResponse) => {
-    setExercises((prev) => [...prev, created]);
     try {
       const loggedExercise = await addLoggedExercise(workoutLogId, created.id);
       onAdded(loggedExercise);
@@ -63,25 +80,22 @@ function AddExerciseToLog({ workoutLogId, onAdded, onCancel }: Props) {
     );
   }
 
-  const filtered = exercises.filter((ex) =>
-    ex.name.toLowerCase().includes(filter.toLowerCase()),
-  );
-
   return (
     <div className="p-3">
       <h2>Add Exercise</h2>
       <ErrorBanner message={error} />
       <input
-        type="text"
+        type="search"
         className="form-control mb-3"
         placeholder="Search exercises..."
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        aria-label="Search exercises"
       />
       {loading && <p>Loading...</p>}
-      {!loading && filtered.length === 0 && <p>No exercises found.</p>}
+      {!loading && exercises.length === 0 && <p>No exercises found.</p>}
       <ul className="list-group mb-3">
-        {filtered.map((exercise) => (
+        {exercises.map((exercise) => (
           <li
             key={exercise.id}
             className="list-group-item"
@@ -92,6 +106,7 @@ function AddExerciseToLog({ workoutLogId, onAdded, onCancel }: Props) {
           </li>
         ))}
       </ul>
+      <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
       <button
         type="button"
         className="btn btn-primary"

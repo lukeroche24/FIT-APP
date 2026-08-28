@@ -1,5 +1,6 @@
 import { authHeaders, handleJsonResponse } from "./http";
-import type { ExerciseResponse } from "./exercises";
+import type { ExerciseResponse, LimbPattern } from "./exercises";
+import { buildPageQuery, type ListPage } from "./paging";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
@@ -12,7 +13,10 @@ export interface WorkoutRequest {
 export interface PlannedSetRequest {
   targetReps?: number;
   targetWeight?: number;
+  rightReps?: number;
+  rightWeight?: number;
   targetDurationSeconds?: number;
+  targetDistance?: number;
   restTimeSeconds?: number;
 }
 
@@ -21,7 +25,10 @@ export interface PlannedSetResponse {
   setNumber: number;
   targetReps: number | null;
   targetWeight: number | null;
+  rightReps: number | null;
+  rightWeight: number | null;
   targetDurationSeconds: number | null;
+  targetDistance: number | null;
   restTimeSeconds: number | null;
 }
 
@@ -32,6 +39,11 @@ export interface WorkoutExerciseResponse {
   exercise: ExerciseResponse;
   minReps: number | null;
   maxReps: number | null;
+  tracksWeight?: boolean | null;
+  tracksDuration?: boolean | null;
+  tracksDistance?: boolean | null;
+  limbPattern?: LimbPattern | null;
+  independentLoads?: boolean | null;
   plannedSets: PlannedSetResponse[];
 }
 
@@ -45,18 +57,15 @@ export interface WorkoutResponse {
   exercises: WorkoutExerciseResponse[];
 }
 
-interface WorkoutPage {
-  content: WorkoutResponse[];
-  totalElements: number;
-}
-
-export function listWorkouts(): Promise<WorkoutResponse[]> {
-  return fetch(`${API_URL}/workouts?size=200`, {
+export function listWorkouts(options?: {
+  query?: string;
+  page?: number;
+  size?: number;
+}): Promise<ListPage<WorkoutResponse>> {
+  return fetch(`${API_URL}/workouts?${buildPageQuery(options)}`, {
     method: "GET",
     headers: authHeaders(),
-  })
-    .then((response) => handleJsonResponse<WorkoutPage>(response))
-    .then((page) => page.content);
+  }).then((response) => handleJsonResponse<ListPage<WorkoutResponse>>(response));
 }
 
 export function getWorkout(id: number): Promise<WorkoutResponse> {
@@ -94,18 +103,30 @@ export function addWorkoutExercise(
   exerciseId: number,
   minReps?: number,
   maxReps?: number,
+  tracking?: {
+    tracksWeight?: boolean;
+    tracksDuration?: boolean;
+    tracksDistance?: boolean;
+  },
 ): Promise<WorkoutExerciseResponse> {
   return fetch(`${API_URL}/workouts/${workoutId}/exercises`, {
     method: "POST",
     headers: authHeaders(),
-    body: JSON.stringify({ exerciseId, minReps, maxReps }),
+    body: JSON.stringify({ exerciseId, minReps, maxReps, ...tracking }),
   }).then((response) => handleJsonResponse<WorkoutExerciseResponse>(response));
 }
 
 export function updateWorkoutExercise(
   workoutId: number,
   workoutExerciseId: number,
-  request: { minReps?: number; maxReps?: number; orderIndex?: number },
+  request: {
+    minReps?: number;
+    maxReps?: number;
+    orderIndex?: number;
+    tracksWeight?: boolean;
+    tracksDuration?: boolean;
+    tracksDistance?: boolean;
+  },
 ): Promise<WorkoutExerciseResponse> {
   return fetch(`${API_URL}/workouts/${workoutId}/exercises/${workoutExerciseId}`, {
     method: "PATCH",
@@ -177,7 +198,10 @@ function toSetRequest(set: PlannedSetResponse): PlannedSetRequest {
   return {
     targetReps: set.targetReps ?? undefined,
     targetWeight: set.targetWeight ?? undefined,
+    rightReps: set.rightReps ?? undefined,
+    rightWeight: set.rightWeight ?? undefined,
     targetDurationSeconds: set.targetDurationSeconds ?? undefined,
+    targetDistance: set.targetDistance ?? undefined,
     restTimeSeconds: set.restTimeSeconds ?? undefined,
   };
 }
@@ -186,7 +210,10 @@ function setChanged(original: PlannedSetResponse, draft: PlannedSetResponse): bo
   return (
     original.targetReps !== draft.targetReps ||
     original.targetWeight !== draft.targetWeight ||
+    original.rightReps !== draft.rightReps ||
+    original.rightWeight !== draft.rightWeight ||
     original.targetDurationSeconds !== draft.targetDurationSeconds ||
+    original.targetDistance !== draft.targetDistance ||
     original.restTimeSeconds !== draft.restTimeSeconds
   );
 }
@@ -250,6 +277,11 @@ export async function persistWorkoutEdits(
         exercise.exercise.id,
         exercise.minReps ?? undefined,
         exercise.maxReps ?? undefined,
+        {
+          tracksWeight: exercise.tracksWeight !== false,
+          tracksDuration: exercise.tracksDuration === true,
+          tracksDistance: exercise.tracksDistance === true,
+        },
       );
       exercise.id = created.id;
       for (const set of exercise.plannedSets) {
@@ -258,10 +290,19 @@ export async function persistWorkoutEdits(
       }
     } else {
       const orig = originalById.get(exercise.id);
-      if ((orig?.minReps ?? null) !== (exercise.minReps ?? null) || (orig?.maxReps ?? null) !== (exercise.maxReps ?? null)) {
+      if (
+        (orig?.minReps ?? null) !== (exercise.minReps ?? null) ||
+        (orig?.maxReps ?? null) !== (exercise.maxReps ?? null) ||
+        orig?.tracksWeight !== exercise.tracksWeight ||
+        orig?.tracksDuration !== exercise.tracksDuration ||
+        orig?.tracksDistance !== exercise.tracksDistance
+      ) {
         await updateWorkoutExercise(workoutId, exercise.id, {
           minReps: exercise.minReps ?? undefined,
           maxReps: exercise.maxReps ?? undefined,
+          tracksWeight: exercise.tracksWeight !== false,
+          tracksDuration: exercise.tracksDuration === true,
+          tracksDistance: exercise.tracksDistance === true,
         });
       }
       await syncSets(workoutId, orig, exercise);

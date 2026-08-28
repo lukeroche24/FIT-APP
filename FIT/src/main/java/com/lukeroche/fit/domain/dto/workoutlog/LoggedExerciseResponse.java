@@ -1,6 +1,7 @@
 package com.lukeroche.fit.domain.dto.workoutlog;
 
 import com.lukeroche.fit.domain.dto.exercise.ExerciseResponse;
+import com.lukeroche.fit.domain.entities.LimbPattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,16 @@ public class LoggedExerciseResponse {
     private String notes;
 
     private ExerciseResponse exercise;
+
+    private Boolean tracksWeight;
+
+    private Boolean tracksDuration;
+
+    private Boolean tracksDistance;
+
+    private LimbPattern limbPattern;
+
+    private Boolean independentLoads;
 
     private List<LoggedSetResponse> loggedSets;
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { copyWorkoutLogToLibrary } from "../../api/friends";
+import { getMe } from "../../api/users";
 import {
   addLoggedSet,
   finishSession,
@@ -29,8 +31,11 @@ function WorkoutLogDetail() {
   const { setInProgress, clearInProgress } = useActiveSession();
 
   const [workoutLog, setWorkoutLog] = useState<WorkoutLogResponse | null>(null);
+  const [viewerId, setViewerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copying, setCopying] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
@@ -49,10 +54,14 @@ function WorkoutLogDetail() {
       return;
     }
 
-    refresh()
+    Promise.all([getWorkoutLog(workoutLogId), getMe()])
+      .then(([log, me]) => {
+        setWorkoutLog(log);
+        setViewerId(me.id);
+      })
       .catch((err) => setError(toErrorMessage(err, "Failed to load session")))
       .finally(() => setLoading(false));
-  }, [isAuthenticated, refresh]);
+  }, [isAuthenticated, workoutLogId]);
 
   const handleSaveName = async () => {
     if (!workoutLog) {
@@ -183,6 +192,23 @@ function WorkoutLogDetail() {
     }
   };
 
+  const handleCopy = async () => {
+    if (!workoutLog) {
+      return;
+    }
+
+    setError(null);
+    setCopying(true);
+    try {
+      await copyWorkoutLogToLibrary(workoutLog.id);
+      setCopied(true);
+    } catch (err) {
+      setError(toErrorMessage(err, "Failed to copy workout"));
+    } finally {
+      setCopying(false);
+    }
+  };
+
   if (loading) {
     return (
       <PageLayout>
@@ -201,7 +227,8 @@ function WorkoutLogDetail() {
 
   const exercises = [...workoutLog.loggedExercises].sort((a, b) => a.orderIndex - b.orderIndex);
   const isCompleted = Boolean(workoutLog.completedAt);
-  const canEdit = !isCompleted || editing;
+  const isOwnLog = viewerId != null && workoutLog.createdByUserId === viewerId;
+  const canEdit = isOwnLog && (!isCompleted || editing);
 
   const stopEditing = () => {
     setEditing(false);
@@ -249,7 +276,7 @@ function WorkoutLogDetail() {
           <span className={`badge-status ${isCompleted ? "completed" : "in-progress"}`}>
             {isCompleted ? "Completed" : "In progress"}
           </span>
-          {isCompleted &&
+          {isOwnLog && isCompleted &&
             (editing ? (
               <button type="button" className="btn btn-primary" onClick={stopEditing}>
                 Done
@@ -259,6 +286,21 @@ function WorkoutLogDetail() {
                 Edit
               </button>
             ))}
+          {!isOwnLog && (
+            <>
+              <button
+                type="button"
+                className="btn btn-outline-primary btn-sm"
+                disabled={copying}
+                onClick={handleCopy}
+              >
+                {copying ? "Copying..." : copied ? "Copied" : "Copy to My Library"}
+              </button>
+              <Link to="/feed" className="btn btn-outline-secondary btn-sm">
+                Back to Feed
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -295,7 +337,7 @@ function WorkoutLogDetail() {
         workoutLog.notes && <p>{workoutLog.notes}</p>
       )}
 
-      {!isCompleted && (
+      {isOwnLog && !isCompleted && (
         <button type="button" className="btn btn-success mb-3" onClick={handleFinish}>
           Finish Session
         </button>

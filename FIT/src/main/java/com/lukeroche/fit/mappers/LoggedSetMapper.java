@@ -8,5 +8,5 @@ public interface LoggedSetMapper {
 
     LoggedSetResponse toResponse(LoggedSetEntity loggedSetEntity);
 
-    LoggedSetEntity fromRequest(LoggedSetRequest loggedSetRequest);
+    //LoggedSetEntity fromRequest(LoggedSetRequest loggedSetRequest);
 }

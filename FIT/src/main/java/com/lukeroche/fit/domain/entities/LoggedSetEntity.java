@@ -27,15 +27,25 @@ public class LoggedSetEntity extends BaseEntity {
 
     private Float actualWeight;
 
+    private Integer rightReps;
+
+    private Float rightWeight;
+
     private Integer targetReps;
 
     private Float targetWeight;
 
-    //private Integer actualDurationSeconds;
+    private Integer actualDurationSeconds;
 
-    //private Float actualDistance;
+    private Float actualDistance;
 
     private String notes;
+
+    @Builder.Default
+    private Boolean failed = false;
+
+    @Builder.Default
+    private Boolean rightFailed = false;
 
     private LocalDateTime loggedAt;
 

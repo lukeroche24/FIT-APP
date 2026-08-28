@@ -33,6 +33,7 @@ public class WorkoutLogEntity extends BaseEntity {
     private LocalDateTime completedAt;
 
     @OneToMany(mappedBy = "workoutLogEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
     @Builder.Default
     private List<LoggedExerciseEntity> loggedExercises = new ArrayList<>();
 

@@ -32,7 +32,24 @@ public class WorkoutExerciseEntity extends BaseEntity{
 
     private Integer maxReps;
 
+    @Builder.Default
+    private Boolean tracksWeight = true;
+
+    @Builder.Default
+    private Boolean tracksDuration = false;
+
+    @Builder.Default
+    private Boolean tracksDistance = false;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private LimbPattern limbPattern = LimbPattern.BILATERAL;
+
+    @Builder.Default
+    private Boolean independentLoads = false;
+
     @OneToMany(mappedBy = "workoutExerciseEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("setNumber ASC")
     @Builder.Default
     private List<PlannedSetEntity> plannedSets = new ArrayList<>();
 

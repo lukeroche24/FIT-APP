@@ -31,7 +31,24 @@ public class LoggedExerciseEntity extends BaseEntity {
     @JoinColumn(name = "exercise_id")
     private ExerciseEntity exerciseEntity;
 
+    @Builder.Default
+    private Boolean tracksWeight = true;
+
+    @Builder.Default
+    private Boolean tracksDuration = false;
+
+    @Builder.Default
+    private Boolean tracksDistance = false;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private LimbPattern limbPattern = LimbPattern.BILATERAL;
+
+    @Builder.Default
+    private Boolean independentLoads = false;
+
     @OneToMany(mappedBy = "loggedExerciseEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("setNumber ASC")
     @Builder.Default
     private List<LoggedSetEntity> loggedSets = new ArrayList<>();
 

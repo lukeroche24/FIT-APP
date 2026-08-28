@@ -15,7 +15,13 @@ public class PlannedSetRequest {
 
     private Float targetWeight;
 
+    private Integer rightReps;
+
+    private Float rightWeight;
+
     private Integer targetDurationSeconds;
+
+    private Float targetDistance;
 
     private Integer restTimeSeconds;
 }

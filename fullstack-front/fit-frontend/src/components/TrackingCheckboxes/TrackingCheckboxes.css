@@ -1,0 +1,18 @@
+.tracking-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.tracking-checks .form-check {
+  margin-bottom: 0;
+  min-height: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tracking-checks .form-check-input {
+  margin-top: 0;
+  float: none;
+}

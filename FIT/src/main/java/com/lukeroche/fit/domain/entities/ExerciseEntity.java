@@ -26,4 +26,20 @@ public class ExerciseEntity extends BaseEntity{
 
     private Double loadStep;
 
+    @Builder.Default
+    private Boolean tracksWeight = true;
+
+    @Builder.Default
+    private Boolean tracksDuration = false;
+
+    @Builder.Default
+    private Boolean tracksDistance = false;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private LimbPattern limbPattern = LimbPattern.BILATERAL;
+
+    @Builder.Default
+    private Boolean independentLoads = false;
+
 }

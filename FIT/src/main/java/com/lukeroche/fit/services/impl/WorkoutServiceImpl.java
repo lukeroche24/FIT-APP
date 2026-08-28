@@ -7,6 +7,7 @@ import com.lukeroche.fit.domain.entities.*;
 import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.WorkoutService;
 import com.lukeroche.fit.services.progression.LoadingTypeSuggestion;
+import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,11 +32,13 @@ public class WorkoutServiceImpl implements WorkoutService {
     private final LoggedExerciseRepository loggedExerciseRepository;
     private final LoadingTypeSuggestion loadingTypeSuggestion;
     private final LoggedSetRepository loggedSetRepository;
+    private final LoadingSchemeFactory loadingSchemeFactory;
 
     public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository,
                               WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository,
                               WorkoutLogRepository workoutLogRepository, LoggedExerciseRepository loggedExerciseRepository,
-                              LoggedSetRepository loggedSetRepository, LoadingTypeSuggestion loadingTypeSuggestion) {
+                              LoggedSetRepository loggedSetRepository, LoadingTypeSuggestion loadingTypeSuggestion,
+                              LoadingSchemeFactory loadingSchemeFactory) {
         this.workoutRepository = workoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.exerciseRepository = exerciseRepository;
@@ -44,6 +47,7 @@ public class WorkoutServiceImpl implements WorkoutService {
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
         this.loadingTypeSuggestion = loadingTypeSuggestion;
+        this.loadingSchemeFactory = loadingSchemeFactory;
     }
 
     @Override
@@ -52,8 +56,11 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
-    public Page<WorkoutEntity> findAllForUser(UUID userId, Pageable pageable) {
-        return workoutRepository.findByCreatedByUserId(userId, pageable);
+    public Page<WorkoutEntity> findAllForUser(UUID userId, String query, Pageable pageable) {
+        if (query == null || query.isBlank()) {
+            return workoutRepository.findByCreatedByUserId(userId, pageable);
+        }
+        return workoutRepository.findByCreatedByUserIdAndNameContainingIgnoreCase(userId, query.trim(), pageable);
     }
 
     @Override
@@ -105,6 +112,14 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .orderIndex(workoutExerciseRepository.countByWorkoutEntity_Id(workoutId) + 1)
                 .minReps(minReps)
                 .maxReps(maxReps)
+                .tracksWeight(SetTracking.resolveWeight(request.getTracksWeight(), exercise.getTracksWeight()))
+                .tracksDuration(SetTracking.resolveDuration(request.getTracksDuration(), exercise.getTracksDuration()))
+                .tracksDistance(SetTracking.resolveDistance(request.getTracksDistance(), exercise.getTracksDistance()))
+                .limbPattern(Laterality.resolvePattern(request.getLimbPattern(), exercise.getLimbPattern()))
+                .independentLoads(Laterality.resolveIndependentLoads(
+                        request.getIndependentLoads(),
+                        exercise.getIndependentLoads(),
+                        exercise.getLoadingType()))
                 .build();
 
         return workoutExerciseRepository.save(workoutExercise);
@@ -123,6 +138,11 @@ public class WorkoutServiceImpl implements WorkoutService {
 
         Optional.ofNullable(workoutExerciseRequest.getMinReps()).ifPresent(reorderedExercise::setMinReps);
         Optional.ofNullable(workoutExerciseRequest.getMaxReps()).ifPresent(reorderedExercise::setMaxReps);
+        Optional.ofNullable(workoutExerciseRequest.getTracksWeight()).ifPresent(reorderedExercise::setTracksWeight);
+        Optional.ofNullable(workoutExerciseRequest.getTracksDuration()).ifPresent(reorderedExercise::setTracksDuration);
+        Optional.ofNullable(workoutExerciseRequest.getTracksDistance()).ifPresent(reorderedExercise::setTracksDistance);
+        Optional.ofNullable(workoutExerciseRequest.getLimbPattern()).ifPresent(reorderedExercise::setLimbPattern);
+        Optional.ofNullable(workoutExerciseRequest.getIndependentLoads()).ifPresent(reorderedExercise::setIndependentLoads);
 
         if (workoutExerciseRequest.getOrderIndex() == null) {
             return workoutExerciseRepository.save(reorderedExercise);
@@ -171,6 +191,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
+    @Transactional
     public PlannedSetEntity addPlannedSet(Long workoutExerciseId, PlannedSetRequest request) {
         WorkoutExerciseEntity workoutExercise = workoutExerciseRepository.findById(workoutExerciseId).orElseThrow();
 
@@ -178,8 +199,11 @@ public class WorkoutServiceImpl implements WorkoutService {
                 .workoutExerciseEntity(workoutExercise)
                 .setNumber((int) (plannedSetRepository.countByWorkoutExerciseEntity_Id(workoutExerciseId) + 1))
                 .targetReps(request.getTargetReps())
-                .targetWeight(request.getTargetWeight())
+                .targetWeight(loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), request.getTargetWeight()))
+                .rightReps(request.getRightReps())
+                .rightWeight(loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), request.getRightWeight()))
                 .targetDurationSeconds(request.getTargetDurationSeconds())
+                .targetDistance(request.getTargetDistance())
                 .restTimeSeconds(request.getRestTimeSeconds())
                 .build();
 
@@ -187,11 +211,18 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
+    @Transactional
     public PlannedSetEntity updatePlannedSet(Long setId, PlannedSetRequest request) {
         return plannedSetRepository.findById(setId).map(existingSet -> {
+            ExerciseEntity exercise = existingSet.getWorkoutExerciseEntity().getExerciseEntity();
             Optional.ofNullable(request.getTargetReps()).ifPresent(existingSet::setTargetReps);
-            Optional.ofNullable(request.getTargetWeight()).ifPresent(existingSet::setTargetWeight);
+            Optional.ofNullable(request.getTargetWeight())
+                    .ifPresent(weight -> existingSet.setTargetWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
+            Optional.ofNullable(request.getRightReps()).ifPresent(existingSet::setRightReps);
+            Optional.ofNullable(request.getRightWeight())
+                    .ifPresent(weight -> existingSet.setRightWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
             Optional.ofNullable(request.getTargetDurationSeconds()).ifPresent(existingSet::setTargetDurationSeconds);
+            Optional.ofNullable(request.getTargetDistance()).ifPresent(existingSet::setTargetDistance);
             Optional.ofNullable(request.getRestTimeSeconds()).ifPresent(existingSet::setRestTimeSeconds);
             return plannedSetRepository.save(existingSet);
         }).orElseThrow(() -> new RuntimeException("Planned set does not exist"));
@@ -247,6 +278,14 @@ public class WorkoutServiceImpl implements WorkoutService {
                     .orderIndex(loggedExercise.getOrderIndex())
                     .minReps(6)
                     .maxReps(12)
+                    .tracksWeight(SetTracking.resolveWeight(loggedExercise.getTracksWeight(), sourceExercise.getTracksWeight()))
+                    .tracksDuration(SetTracking.resolveDuration(loggedExercise.getTracksDuration(), sourceExercise.getTracksDuration()))
+                    .tracksDistance(SetTracking.resolveDistance(loggedExercise.getTracksDistance(), sourceExercise.getTracksDistance()))
+                    .limbPattern(Laterality.resolvePattern(loggedExercise.getLimbPattern(), sourceExercise.getLimbPattern()))
+                    .independentLoads(Laterality.resolveIndependentLoads(
+                            loggedExercise.getIndependentLoads(),
+                            sourceExercise.getIndependentLoads(),
+                            sourceExercise.getLoadingType()))
                     .build());
 
             List<PlannedSetEntity> newPlannedSets = loggedSetRepository
@@ -256,7 +295,10 @@ public class WorkoutServiceImpl implements WorkoutService {
                             .setNumber(loggedSet.getSetNumber())
                             .targetReps(loggedSet.getActualReps())
                             .targetWeight(loggedSet.getActualWeight())
-                            //.targetDurationSeconds(loggedSet.getActualDurationSeconds())
+                            .rightReps(loggedSet.getRightReps())
+                            .rightWeight(loggedSet.getRightWeight())
+                            .targetDurationSeconds(loggedSet.getActualDurationSeconds())
+                            .targetDistance(loggedSet.getActualDistance())
                             .restTimeSeconds(null)
                             .build())
                     .toList();
@@ -279,6 +321,13 @@ public class WorkoutServiceImpl implements WorkoutService {
                             .createdByUserId(copyingUserId)
                             .loadingType(sourceExercise.getLoadingType())
                             .loadStep(sourceExercise.getLoadStep())
+                            .tracksWeight(SetTracking.tracksWeight(sourceExercise.getTracksWeight()))
+                            .tracksDuration(SetTracking.tracksDuration(sourceExercise.getTracksDuration()))
+                            .tracksDistance(SetTracking.tracksDistance(sourceExercise.getTracksDistance()))
+                            .limbPattern(Laterality.pattern(sourceExercise.getLimbPattern()))
+                            .independentLoads(Laterality.independentLoads(
+                                    sourceExercise.getIndependentLoads(),
+                                    sourceExercise.getLoadingType()))
                             .build();
                     loadingTypeSuggestion.applyDefaults(copy);
                     return exerciseRepository.save(copy);

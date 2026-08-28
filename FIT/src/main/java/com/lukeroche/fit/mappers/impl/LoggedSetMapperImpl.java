@@ -21,8 +21,8 @@ public class LoggedSetMapperImpl implements LoggedSetMapper {
         return modelMapper.map(loggedSetEntity, LoggedSetResponse.class);
     }
 
-    @Override
-    public LoggedSetEntity fromRequest(LoggedSetRequest loggedSetRequest) {
-        return modelMapper.map(loggedSetRequest, LoggedSetEntity.class);
-    }
+//    @Override
+//    public LoggedSetEntity fromRequest(LoggedSetRequest loggedSetRequest) {
+//        return modelMapper.map(loggedSetRequest, LoggedSetEntity.class);
+//    }
 }

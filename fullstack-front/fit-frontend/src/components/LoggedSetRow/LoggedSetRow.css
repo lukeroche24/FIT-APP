@@ -3,3 +3,22 @@
   border-radius: 6px;
   padding: 0.4rem 0.6rem;
 }
+
+.set-number {
+  min-width: 3.5rem;
+}
+
+.set-fail {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.set-fail-input {
+  margin: 0;
+  float: none;
+}
