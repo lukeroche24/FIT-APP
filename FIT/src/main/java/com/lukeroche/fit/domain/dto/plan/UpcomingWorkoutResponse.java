@@ -21,4 +21,8 @@ public class UpcomingWorkoutResponse {
     private Integer weekNumber;
 
     private WorkoutResponse workout;
+
+    private PlanOccurrenceStatus status;
+
+    private Long workoutLogId;
 }

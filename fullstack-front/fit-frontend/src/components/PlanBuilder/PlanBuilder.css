@@ -1,0 +1,23 @@
+.plan-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.plan-name-input {
+  max-width: 28rem;
+  font-weight: 800;
+  font-size: 1.4rem;
+}
+
+.plan-weeks-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.plan-weeks-row input {
+  width: 5rem;
+}

@@ -8,6 +8,7 @@ import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import Modal from "../Modal/Modal";
 import PageLayout from "../PageLayout/PageLayout";
+import { CurrentPlanSchedule } from "../CurrentPlan/CurrentPlan";
 import "./PlanList.css";
 
 function PlanList() {
@@ -49,7 +50,7 @@ function PlanList() {
       const created = await createPlan({ name, weeks });
       setPlans((prev) => [...prev, created]);
       closeModal();
-      navigate(`/plans/${created.id}`);
+      navigate(`/plans/${created.id}`, { state: { isNew: true } });
     } catch (err) {
       setSaveError(toErrorMessage(err, "Failed to create plan"));
     } finally {
@@ -59,6 +60,10 @@ function PlanList() {
 
   const handleDelete = async (e: MouseEvent, id: number) => {
     e.stopPropagation();
+    await removePlan(id);
+  };
+
+  const removePlan = async (id: number) => {
     if (!window.confirm("Delete this plan?")) {
       return;
     }
@@ -74,63 +79,72 @@ function PlanList() {
   const handleActivate = async (e: MouseEvent, id: number) => {
     e.stopPropagation();
     try {
-      await activatePlan(id);
-      setPlans((prev) => prev.map((p) => ({ ...p, active: p.id === id })));
+      const activated = await activatePlan(id);
+      setPlans((prev) =>
+        prev.map((plan) =>
+          plan.id === activated.id ? { ...activated, active: true } : { ...plan, active: false },
+        ),
+      );
     } catch (err) {
       setError(toErrorMessage(err, "Failed to activate plan"));
     }
   };
 
+  const activePlan = plans.find((plan) => plan.active) ?? null;
+  const otherPlans = plans.filter((plan) => !plan.active);
+
   return (
-    <PageLayout width="narrow">
+    <PageLayout width="wide">
       <div className="page-header">
         <h1>Plans</h1>
-        <div className="d-flex gap-2">
-          <button type="button" className="btn btn-outline-primary" onClick={() => navigate("/plans/current")}>
-            View Current Plan
-          </button>
-          <button type="button" className="btn btn-primary" onClick={() => setIsCreating(true)}>
-            + New Plan
-          </button>
-        </div>
+        <button type="button" className="btn btn-primary" onClick={() => setIsCreating(true)}>
+          + New Plan
+        </button>
       </div>
       <ErrorBanner message={error} />
       {loading && <p>Loading...</p>}
-      {!loading && plans.length === 0 && <p className="text-muted">No plans yet.</p>}
-      <ul className="list-group">
-        {plans.map((plan) => (
-          <li
-            key={plan.id}
-            className="list-group-item card-row d-flex justify-content-between align-items-center"
-            role="button"
-            onClick={() => navigate(`/plans/${plan.id}`)}
-          >
-            <span>
-              <strong>{plan.name}</strong>{" "}
-              <small className="text-muted">{plan.weeks} weeks</small>{" "}
-              {plan.active && <span className="badge-status completed">Active</span>}
-            </span>
-            <div className="d-flex gap-2">
-              {!plan.active && (
-                <button
-                  type="button"
-                  className="btn btn-outline-primary btn-sm"
-                  onClick={(e) => handleActivate(e, plan.id)}
+      {!loading && (
+        <>
+          <CurrentPlanSchedule plan={activePlan} onDelete={removePlan} />
+          <div className="section-label other-plans-label">{activePlan ? "Other Plans" : "Your Plans"}</div>
+          {plans.length === 0 && <p className="text-muted">No plans yet.</p>}
+          {plans.length > 0 && otherPlans.length === 0 && (
+            <p className="text-muted">No other plans. Create another one if you want a spare template.</p>
+          )}
+          {otherPlans.length > 0 && (
+            <ul className="list-group">
+              {otherPlans.map((plan) => (
+                <li
+                  key={plan.id}
+                  className="list-group-item card-row d-flex justify-content-between align-items-center"
+                  role="button"
+                  onClick={() => navigate(`/plans/${plan.id}`)}
                 >
-                  Activate
-                </button>
-              )}
-              <button
-                type="button"
-                className="btn btn-outline-danger btn-sm"
-                onClick={(e) => handleDelete(e, plan.id)}
-              >
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                  <span>
+                    <strong>{plan.name}</strong> <small className="text-muted">{plan.weeks} weeks</small>
+                  </span>
+                  <div className="d-flex gap-2">
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary btn-sm"
+                      onClick={(e) => handleActivate(e, plan.id)}
+                    >
+                      Activate
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger btn-sm"
+                      onClick={(e) => handleDelete(e, plan.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
 
       <Modal isOpen={isCreating} onClose={closeModal}>
         <div className="p-3">

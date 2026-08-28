@@ -28,3 +28,42 @@
 .plan-day-rest {
   font-style: italic;
 }
+
+.plan-day-cell.status-completed {
+  background: rgba(26, 157, 92, 0.12);
+  border-color: rgba(26, 157, 92, 0.45) !important;
+}
+
+.plan-day-cell.status-missed {
+  background: rgba(224, 52, 47, 0.1);
+  border-color: rgba(224, 52, 47, 0.45) !important;
+}
+
+.plan-day-cell.status-due {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.plan-day-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.5em;
+  border-radius: 999px;
+}
+
+.plan-day-badge.status-completed {
+  background: rgba(26, 157, 92, 0.18);
+  color: #1a9d5c;
+}
+
+.plan-day-badge.status-missed {
+  background: rgba(224, 52, 47, 0.16);
+  color: #c62828;
+}
+
+.plan-day-badge.status-due {
+  background: rgba(255, 76, 41, 0.12);
+  color: var(--accent-dark);
+}

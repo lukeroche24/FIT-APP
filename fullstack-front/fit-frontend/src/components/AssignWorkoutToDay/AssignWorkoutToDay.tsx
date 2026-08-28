@@ -1,25 +1,20 @@
 import { useEffect, useState } from "react";
 import { listWorkouts } from "../../api/workouts";
 import type { WorkoutResponse } from "../../api/workouts";
-import { setPlanDay } from "../../api/plans";
-import type { PlanDayResponse } from "../../api/plans";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import "./AssignWorkoutToDay.css";
 
 interface Props {
-  planId: number;
-  dayOfWeek: number;
-  onAssigned: (planDay: PlanDayResponse) => void;
+  onPicked: (workout: WorkoutResponse) => void;
   onCancel: () => void;
 }
 
-function AssignWorkoutToDay({ planId, dayOfWeek, onAssigned, onCancel }: Props) {
+function AssignWorkoutToDay({ onPicked, onCancel }: Props) {
   const [workouts, setWorkouts] = useState<WorkoutResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
-  const [assigningId, setAssigningId] = useState<number | null>(null);
 
   useEffect(() => {
     listWorkouts()
@@ -27,19 +22,6 @@ function AssignWorkoutToDay({ planId, dayOfWeek, onAssigned, onCancel }: Props) 
       .catch((err) => setError(toErrorMessage(err, "Failed to load workouts")))
       .finally(() => setLoading(false));
   }, []);
-
-  const handleSelect = async (workout: WorkoutResponse) => {
-    setError(null);
-    setAssigningId(workout.id);
-    try {
-      const planDay = await setPlanDay(planId, dayOfWeek, workout.id);
-      onAssigned(planDay);
-    } catch (err) {
-      setError(toErrorMessage(err, "Failed to assign workout"));
-    } finally {
-      setAssigningId(null);
-    }
-  };
 
   const filtered = workouts.filter((w) => w.name.toLowerCase().includes(filter.toLowerCase()));
 
@@ -62,9 +44,9 @@ function AssignWorkoutToDay({ planId, dayOfWeek, onAssigned, onCancel }: Props) 
             key={workout.id}
             className="list-group-item"
             role="button"
-            onClick={() => handleSelect(workout)}
+            onClick={() => onPicked(workout)}
           >
-            {assigningId === workout.id ? "Assigning..." : workout.name}
+            {workout.name}
           </li>
         ))}
       </ul>

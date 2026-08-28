@@ -25,11 +25,15 @@ export interface PlanResponse {
   days: PlanDayResponse[];
 }
 
+export type PlanOccurrenceStatus = "REST" | "COMPLETED" | "MISSED" | "DUE" | "UPCOMING";
+
 export interface UpcomingWorkoutResponse {
   date: string;
   dayOfWeek: number;
   weekNumber: number;
   workout: WorkoutResponse | null;
+  status?: PlanOccurrenceStatus;
+  workoutLogId?: number | null;
 }
 
 interface PlanPage {
@@ -134,4 +138,41 @@ export function getNextWorkout(): Promise<UpcomingWorkoutResponse | null> {
     if (response.status === 404) return null;
     return handleJsonResponse<UpcomingWorkoutResponse>(response);
   });
+}
+
+export async function persistPlanEdits(
+  original: PlanResponse,
+  name: string,
+  draftDays: { dayOfWeek: number; workout: WorkoutResponse | null }[],
+  weeks?: number,
+): Promise<void> {
+  const patch: PlanRequest = {};
+  const trimmedName = name.trim();
+  if (trimmedName && trimmedName !== original.name) {
+    patch.name = trimmedName;
+  }
+  if (weeks != null && Number.isFinite(weeks) && weeks >= 1 && weeks !== original.weeks) {
+    patch.weeks = weeks;
+  }
+  if (Object.keys(patch).length > 0) {
+    await updatePlan(original.id, patch);
+  }
+
+  const originalWorkoutId = new Map(
+    original.days.map((day) => [day.dayOfWeek, day.workout.id]),
+  );
+  const draftByDay = new Map(draftDays.map((day) => [day.dayOfWeek, day.workout]));
+
+  for (let dayOfWeek = 1; dayOfWeek <= 7; dayOfWeek++) {
+    const previousId = originalWorkoutId.get(dayOfWeek) ?? null;
+    const nextId = draftByDay.get(dayOfWeek)?.id ?? null;
+    if (previousId === nextId) {
+      continue;
+    }
+    if (nextId == null) {
+      await removePlanDay(original.id, dayOfWeek);
+    } else {
+      await setPlanDay(original.id, dayOfWeek, nextId);
+    }
+  }
 }
