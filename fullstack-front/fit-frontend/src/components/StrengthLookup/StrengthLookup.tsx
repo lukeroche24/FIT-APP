@@ -128,20 +128,20 @@ function StrengthLookup({ userId }: StrengthLookupProps) {
               <div className="col-md-4">
                 <div className="stat">
                   <div className="stat-number stat-number--text">{formatKg(stats.estimatedOneRm)}</div>
-                  <div className="stat-label">Estimated 1RM</div>
+                  <div className="stat-label">Estimated 1RM · last 4 weeks</div>
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="stat">
                   <div className="stat-number stat-number--text">{formatKg(stats.testedOneRm)}</div>
-                  <div className="stat-label">Tested 1RM</div>
+                  <div className="stat-label">Tested 1RM · all time</div>
                 </div>
               </div>
               <div className="col-md-4">
                 <div className="stat">
                   <div className="stat-number stat-number--text">{formatLift(stats.heaviestWeight, stats.heaviestReps)}</div>
                   <div className="stat-label">
-                    Heaviest lift
+                    Heaviest lift · all time
                     {stats.heaviestAt
                       ? ` · ${new Date(stats.heaviestAt).toLocaleDateString()}`
                       : ""}

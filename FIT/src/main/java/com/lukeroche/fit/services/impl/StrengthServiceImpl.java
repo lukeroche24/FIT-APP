@@ -8,6 +8,7 @@ import com.lukeroche.fit.domain.projections.SetHistoryRow;
 import com.lukeroche.fit.repositories.ExerciseRepository;
 import com.lukeroche.fit.repositories.LoggedSetRepository;
 import com.lukeroche.fit.services.FriendshipService;
+import com.lukeroche.fit.services.StrengthConfig;
 import com.lukeroche.fit.services.StrengthService;
 import com.lukeroche.fit.services.progression.OneRepMax;
 import com.lukeroche.fit.services.progression.WeakerSide;
@@ -15,6 +16,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +28,7 @@ public class StrengthServiceImpl implements StrengthService {
     private final FriendshipService friendshipService;
     private final ExerciseRepository exerciseRepository;
     private final LoggedSetRepository loggedSetRepository;
+    private final StrengthConfig strengthConfig;
 
     @Override
     public List<StrengthExerciseOption> listTrainedExercises(UUID viewerId, UUID targetId) {
@@ -53,6 +56,7 @@ public class StrengthServiceImpl implements StrengthService {
         Double heaviestWeight = null;
         Integer heaviestReps = null;
         LocalDateTime heaviestAt = null;
+        LocalDate estimateFrom = LocalDate.now().minusDays(Math.max(0, strengthConfig.estimatedOneRmDays()));
 
         for (SetHistoryRow set : sets) {
             WeakerSide.Side side = successfulSide(set);
@@ -60,9 +64,11 @@ public class StrengthServiceImpl implements StrengthService {
                 continue;
             }
 
-            double estimate = OneRepMax.epley(side.weight(), side.reps());
-            if (estimatedOneRm == null || estimate > estimatedOneRm) {
-                estimatedOneRm = estimate;
+            if (inEstimateWindow(set.completedAt(), estimateFrom)) {
+                double estimate = OneRepMax.epley(side.weight(), side.reps());
+                if (estimatedOneRm == null || estimate > estimatedOneRm) {
+                    estimatedOneRm = estimate;
+                }
             }
 
             if (side.reps() == 1 && (testedOneRm == null || side.weight() > testedOneRm)) {
@@ -95,6 +101,10 @@ public class StrengthServiceImpl implements StrengthService {
         if (!viewerId.equals(targetId) && !friendshipService.isFriend(viewerId, targetId)) {
             throw new EntityNotFoundException("User not found");
         }
+    }
+
+    private static boolean inEstimateWindow(LocalDateTime completedAt, LocalDate estimateFrom) {
+        return completedAt != null && !completedAt.toLocalDate().isBefore(estimateFrom);
     }
 
     private static WeakerSide.Side successfulSide(SetHistoryRow set) {
