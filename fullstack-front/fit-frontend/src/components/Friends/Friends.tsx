@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { Link } from "react-router-dom";
 import {
   acceptFriendRequest,
   listFriends,
@@ -15,6 +16,7 @@ import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
+import "../Profile/Profile.css";
 import "./Friends.css";
 
 function Friends() {
@@ -69,13 +71,17 @@ function Friends() {
     }
   };
 
+  const setResultStatus = (userId: string, relationshipStatus: UserSearchResult["relationshipStatus"]) => {
+    setResults((prev) =>
+      prev.map((result) => (result.id === userId ? { ...result, relationshipStatus } : result)),
+    );
+  };
+
   const handleSendRequest = async (result: UserSearchResult) => {
     setSearchError(null);
     try {
       await sendFriendRequest(result.username);
-      setResults((prev) =>
-        prev.map((r) => (r.id === result.id ? { ...r, relationshipStatus: "PENDING_OUTGOING" } : r)),
-      );
+      setResultStatus(result.id, "PENDING_OUTGOING");
       loadFriendData().catch(() => {});
     } catch (err) {
       setSearchError(toErrorMessage(err, "Failed to send request"));
@@ -84,9 +90,13 @@ function Friends() {
 
   const handleAccept = async (id: number) => {
     setError(null);
+    const accepted = incoming.find((req) => req.id === id);
     try {
       await acceptFriendRequest(id);
       await loadFriendData();
+      if (accepted) {
+        setResultStatus(accepted.otherUserId, "FRIENDS");
+      }
     } catch (err) {
       setError(toErrorMessage(err, "Failed to accept request"));
     }
@@ -94,10 +104,14 @@ function Friends() {
 
   const handleDeclineOrCancel = async (id: number) => {
     setError(null);
+    const cancelled = [...incoming, ...outgoing].find((req) => req.id === id);
     try {
       await removeFriendRequest(id);
       setIncoming((prev) => prev.filter((r) => r.id !== id));
       setOutgoing((prev) => prev.filter((r) => r.id !== id));
+      if (cancelled) {
+        setResultStatus(cancelled.otherUserId, "NONE");
+      }
     } catch (err) {
       setError(toErrorMessage(err, "Failed to remove request"));
     }
@@ -112,6 +126,7 @@ function Friends() {
     try {
       await unfriend(userId);
       setFriends((prev) => prev.filter((f) => f.userId !== userId));
+      setResultStatus(userId, "NONE");
     } catch (err) {
       setError(toErrorMessage(err, "Failed to unfriend"));
     }
@@ -166,7 +181,15 @@ function Friends() {
           {results.map((result) => (
             <li key={result.id} className="list-group-item card-row d-flex justify-content-between align-items-center">
               <span>
-                <strong>{result.username}</strong> <small className="text-muted">{result.name}</small>
+                {result.relationshipStatus === "FRIENDS" ? (
+                  <Link to={`/friends/${result.id}`} className="profile-link">
+                    <strong>{result.username}</strong> <small className="text-muted">{result.name}</small>
+                  </Link>
+                ) : (
+                  <>
+                    <strong>{result.username}</strong> <small className="text-muted">{result.name}</small>
+                  </>
+                )}
               </span>
               {renderAction(result)}
             </li>
@@ -228,23 +251,42 @@ function Friends() {
       {!loading && (
         <>
           <div className="section-label">Your friends</div>
-          {friends.length === 0 && <p className="text-muted">No friends yet — search for a username above.</p>}
+          {friends.length === 0 && (
+            <div className="empty-state">
+              <p>No friends yet — search for a username above.</p>
+            </div>
+          )}
           <ul className="list-group">
             {friends.map((friend) => (
               <li
                 key={friend.userId}
-                className="list-group-item card-row d-flex justify-content-between align-items-center"
+                className="list-group-item card-row d-flex justify-content-between align-items-center gap-2"
               >
-                <span>
-                  <strong>{friend.username}</strong> <small className="text-muted">{friend.name}</small>
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-outline-danger btn-sm"
-                  onClick={() => handleUnfriend(friend.userId)}
-                >
-                  Unfriend
-                </button>
+                <Link to={`/friends/${friend.userId}`} className="profile-link list-row-body">
+                  <span className="list-row-title">{friend.username}</span>
+                  <span className="list-row-meta">
+                    {[
+                      friend.name || null,
+                      friend.friendsSince
+                        ? `Friends since ${new Date(friend.friendsSince).toLocaleDateString()}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </Link>
+                <div className="d-flex gap-2">
+                  <Link to={`/friends/${friend.userId}`} className="btn btn-outline-primary btn-sm">
+                    View
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => handleUnfriend(friend.userId)}
+                  >
+                    Unfriend
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

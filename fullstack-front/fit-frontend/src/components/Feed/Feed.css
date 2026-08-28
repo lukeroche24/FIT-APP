@@ -1,0 +1,32 @@
+.feed-card {
+  position: relative;
+}
+
+.feed-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-1px);
+}
+
+.feed-card-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.feed-card-body {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.feed-card-body a,
+.feed-card-body button {
+  pointer-events: auto;
+}
+
+.feed-session-meta {
+  font-size: 0.875em;
+  color: var(--text-muted);
+}

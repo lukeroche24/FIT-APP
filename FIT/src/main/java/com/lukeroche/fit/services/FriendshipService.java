@@ -6,7 +6,9 @@ import com.lukeroche.fit.domain.entities.FriendshipEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface FriendshipService {
@@ -32,6 +34,8 @@ public interface FriendshipService {
     Page<FriendResponse> listFriends(UUID userId, Pageable pageable);
 
     boolean isFriend(UUID userIdA, UUID userIdB);
+
+    Optional<LocalDateTime> friendsSince(UUID userIdA, UUID userIdB);
 
     RelationshipStatus relationshipStatus(UUID userId, UUID otherUserId);
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +76,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     public FriendshipEntity acceptRequest(Long requestId) {
         FriendshipEntity friendship = friendshipRepository.findById(requestId).orElseThrow();
         friendship.setStatus(FriendshipStatus.ACCEPTED);
+        friendship.setAcceptedAt(LocalDateTime.now());
         return friendshipRepository.save(friendship);
     }
 
@@ -120,7 +122,7 @@ public class FriendshipServiceImpl implements FriendshipService {
                             .userId(friend.getId())
                             .username(friend.getUsername())
                             .name(friend.getName())
-                            .friendsSince(friendship.getCreatedAt())
+                            .friendsSince(friendsSinceOf(friendship))
                             .build();
                 })
                 .toList();
@@ -135,6 +137,17 @@ public class FriendshipServiceImpl implements FriendshipService {
         return findRelationship(userIdA, userIdB)
                 .map(f -> f.getStatus() == FriendshipStatus.ACCEPTED)
                 .orElse(false);
+    }
+
+    @Override
+    public Optional<LocalDateTime> friendsSince(UUID userIdA, UUID userIdB) {
+        return findRelationship(userIdA, userIdB)
+                .filter(f -> f.getStatus() == FriendshipStatus.ACCEPTED)
+                .map(FriendshipServiceImpl::friendsSinceOf);
+    }
+
+    private static LocalDateTime friendsSinceOf(FriendshipEntity friendship) {
+        return friendship.getAcceptedAt() != null ? friendship.getAcceptedAt() : friendship.getCreatedAt();
     }
 
     @Override

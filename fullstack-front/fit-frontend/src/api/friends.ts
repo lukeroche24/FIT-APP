@@ -1,5 +1,5 @@
 import { authHeaders, handleJsonResponse } from "./http";
-import type { WorkoutLogResponse } from "./workoutLogs";
+import { buildPageQuery, type ListPage } from "./paging";
 import type { WorkoutResponse } from "./workouts";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -29,7 +29,10 @@ export interface FriendResponse {
 }
 
 export interface FeedItemResponse {
-  workoutLog: WorkoutLogResponse;
+  workoutLogId: number;
+  workoutName: string;
+  completedAt: string | null;
+  exerciseNames: string[];
   friendUserId: string;
   friendUsername: string;
   friendName: string;
@@ -105,13 +108,18 @@ export function unfriend(friendUserId: string): Promise<void> {
   }).then((response) => handleJsonResponse<void>(response));
 }
 
-export function getFeed(): Promise<FeedItemResponse[]> {
-  return fetch(`${API_URL}/feed?size=200`, {
-    method: "GET",
-    headers: authHeaders(),
-  })
-    .then((response) => handleJsonResponse<Page<FeedItemResponse>>(response))
-    .then((page) => page.content);
+export function getFeed(options?: { page?: number; size?: number }): Promise<ListPage<FeedItemResponse>> {
+  return fetch(
+    `${API_URL}/feed?${buildPageQuery({
+      page: options?.page,
+      size: options?.size,
+      sort: "completedAt,desc",
+    })}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+    },
+  ).then((response) => handleJsonResponse<ListPage<FeedItemResponse>>(response));
 }
 
 export function copyWorkoutLogToLibrary(workoutLogId: number): Promise<WorkoutResponse> {

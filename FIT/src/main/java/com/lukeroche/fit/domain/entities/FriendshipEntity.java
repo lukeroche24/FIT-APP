@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -24,5 +25,7 @@ public class FriendshipEntity extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private FriendshipStatus status;
+
+    private LocalDateTime acceptedAt;
 
 }

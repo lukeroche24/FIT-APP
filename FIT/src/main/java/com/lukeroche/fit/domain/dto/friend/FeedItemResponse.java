@@ -1,11 +1,12 @@
 package com.lukeroche.fit.domain.dto.friend;
 
-import com.lukeroche.fit.domain.dto.workoutlog.WorkoutLogResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -14,7 +15,13 @@ import java.util.UUID;
 @Builder
 public class FeedItemResponse {
 
-    private WorkoutLogResponse workoutLog;
+    private Long workoutLogId;
+
+    private String workoutName;
+
+    private LocalDateTime completedAt;
+
+    private List<String> exerciseNames;
 
     private UUID friendUserId;
 

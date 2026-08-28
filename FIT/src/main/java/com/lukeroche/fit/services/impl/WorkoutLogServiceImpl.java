@@ -12,11 +12,17 @@ import com.lukeroche.fit.services.progression.Recommendation;
 import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -149,8 +155,12 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     }
 
     @Override
-    public Page<WorkoutLogEntity> findAllForUser(UUID userId, Pageable pageable) {
-        return workoutLogRepository.findByCreatedByUserId(userId, pageable);
+    public Page<WorkoutLogEntity> findAllForUser(UUID userId, String query, Pageable pageable) {
+        Pageable sorted = withDefaultSort(pageable, "startedAt");
+        if (query == null || query.isBlank()) {
+            return workoutLogRepository.findByCreatedByUserId(userId, sorted);
+        }
+        return workoutLogRepository.findByCreatedByUserIdAndNameContainingIgnoreCase(userId, query.trim(), sorted);
     }
 
     @Override
@@ -161,6 +171,22 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     @Override
     public Optional<WorkoutLogEntity> findOneForUser(Long id, UUID userId) {
         return workoutLogRepository.findByIdAndCreatedByUserId(id, userId);
+    }
+
+    @Override
+    public Optional<WorkoutLogEntity> findVisibleToUser(Long id, UUID userId) {
+        Optional<WorkoutLogEntity> found = workoutLogRepository.findById(id);
+        if (found.isEmpty()) {
+            return found;
+        }
+        WorkoutLogEntity log = found.get();
+        if (log.getCreatedByUserId().equals(userId)) {
+            return found;
+        }
+        if (log.getCompletedAt() != null && friendshipService.isFriend(userId, log.getCreatedByUserId())) {
+            return found;
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -332,7 +358,29 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         if (friendIds.isEmpty()) {
             return Page.empty(pageable);
         }
-        return workoutLogRepository.findByCreatedByUserIdInAndCompletedAtIsNotNullOrderByCompletedAtDesc(friendIds, pageable);
+        return workoutLogRepository.findFriendsFeed(userId, friendIds, withDefaultSort(pageable, "completedAt"));
+    }
+
+    private static Pageable withDefaultSort(Pageable pageable, String property) {
+        if (pageable.getSort().isSorted()) {
+            return pageable;
+        }
+        return PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.DESC, property));
+    }
+
+    @Override
+    public Map<Long, List<String>> exerciseNamesByLogId(Collection<Long> logIds) {
+        if (logIds == null || logIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<String>> names = new LinkedHashMap<>();
+        for (LoggedExerciseRepository.LogExerciseName row : loggedExerciseRepository.findExerciseNamesForLogs(logIds)) {
+            names.computeIfAbsent(row.getWorkoutLogId(), unused -> new ArrayList<>()).add(row.getName());
+        }
+        return names;
     }
 
     @Override
