@@ -23,34 +23,95 @@ public final class SessionBest {
 
         List<SessionStrength> sessions = new ArrayList<>();
         for (Map.Entry<Long, List<SetHistoryRow>> entry : bySession.entrySet()) {
-            double best = 0;
+            double bestAttempt = 0;
+            double bestCompleted = 0;
             LocalDateTime completedAt = null;
-            int bestReps = 0;
-            double bestWeight = 0;
+            int bestAttemptReps = 0;
+            double bestAttemptWeight = 0;
+            int bestCompletedReps = 0;
+            double bestCompletedWeight = 0;
+            Integer prescribedReps = null;
+            Double prescribedWeight = null;
+            boolean prescriptionHit = true;
+
             for (SetHistoryRow set : entry.getValue()) {
-                double value = sessionValue(set, loadingType);
-                if (value > best) {
-                    best = value;
+                if (prescribedReps == null && set.targetReps() != null && set.targetReps() > 0) {
+                    prescribedReps = set.targetReps();
+                }
+                if (prescribedWeight == null && set.targetWeight() != null && set.targetWeight() > 0) {
+                    prescribedWeight = set.targetWeight().doubleValue();
+                }
+                boolean completed = setCompleted(set);
+                if (!completed) {
+                    prescriptionHit = false;
+                }
+
+                WeakerSide.Side side = WeakerSide.of(
+                        set.actualReps(),
+                        set.actualWeight(),
+                        set.rightReps(),
+                        set.rightWeight());
+                double value = sessionValue(side, loadingType);
+                if (value > bestAttempt) {
+                    bestAttempt = value;
+                    if (completedAt == null) {
+                        completedAt = set.completedAt();
+                    }
+                    bestAttemptReps = side.reps();
+                    bestAttemptWeight = side.weight();
+                }
+                if (completed && value > bestCompleted) {
+                    bestCompleted = value;
                     completedAt = set.completedAt();
-                    bestReps = set.actualReps() == null ? 0 : set.actualReps();
-                    bestWeight = set.actualWeight() == null ? 0 : set.actualWeight();
+                    bestCompletedReps = side.reps();
+                    bestCompletedWeight = side.weight();
                 }
             }
-            if (best > 0 && completedAt != null) {
-                sessions.add(new SessionStrength(entry.getKey(), completedAt, best, bestReps, bestWeight));
+            if (completedAt == null || (bestCompleted <= 0 && bestAttempt <= 0)) {
+                continue;
             }
+
+            int reps;
+            double weight;
+            if (prescriptionHit && bestCompleted > 0) {
+                reps = bestCompletedReps;
+                weight = bestCompletedWeight;
+            } else {
+                reps = prescribedReps != null ? prescribedReps : (bestCompleted > 0 ? bestCompletedReps : bestAttemptReps);
+                weight = prescribedWeight != null ? prescribedWeight : (bestCompleted > 0 ? bestCompletedWeight : bestAttemptWeight);
+            }
+            double trendValue = bestCompleted > 0 ? bestCompleted : bestAttempt;
+            sessions.add(new SessionStrength(
+                    entry.getKey(), completedAt, trendValue, reps, weight, prescriptionHit));
         }
 
         sessions.sort(Comparator.comparing(SessionStrength::completedAt));
         return sessions;
     }
 
-    private static double sessionValue(SetHistoryRow set, LoadingType loadingType) {
-        int reps = set.actualReps() == null ? 0 : set.actualReps();
-        double weight = set.actualWeight() == null ? 0 : set.actualWeight();
-        if (loadingType == LoadingType.BODYWEIGHT) {
-            return reps;
+    static boolean setCompleted(SetHistoryRow set) {
+        if (Boolean.TRUE.equals(set.failed()) || Boolean.TRUE.equals(set.rightFailed())) {
+            return false;
         }
-        return OneRepMax.epley(weight, reps);
+        Integer target = set.targetReps();
+        if (target == null || target <= 0) {
+            return true;
+        }
+        boolean hasLeft = set.actualReps() != null && set.actualReps() > 0;
+        boolean hasRight = set.rightReps() != null && set.rightReps() > 0;
+        if (!hasLeft && !hasRight) {
+            return false;
+        }
+        if (hasLeft && set.actualReps() < target) {
+            return false;
+        }
+        return !hasRight || set.rightReps() >= target;
+    }
+
+    private static double sessionValue(WeakerSide.Side side, LoadingType loadingType) {
+        if (loadingType == LoadingType.BODYWEIGHT) {
+            return side.weight() * 1000 + side.reps();
+        }
+        return OneRepMax.epley(side.weight(), side.reps());
     }
 }

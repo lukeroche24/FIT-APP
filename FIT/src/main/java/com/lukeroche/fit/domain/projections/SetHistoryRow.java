@@ -11,6 +11,8 @@ public record SetHistoryRow(
     Float actualWeight,
     Integer rightReps,
     Float rightWeight,
+    Integer targetReps,
+    Float targetWeight,
     Boolean failed,
     Boolean rightFailed) {
 

@@ -30,6 +30,8 @@ public interface LoggedSetRepository extends CrudRepository<LoggedSetEntity, Lon
                 ls.actualWeight,
                 ls.rightReps,
                 ls.rightWeight,
+                ls.targetReps,
+                ls.targetWeight,
                 ls.failed,
                 ls.rightFailed)
             FROM LoggedSetEntity ls

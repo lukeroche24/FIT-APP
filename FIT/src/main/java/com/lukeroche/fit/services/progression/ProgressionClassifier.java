@@ -2,6 +2,8 @@ package com.lukeroche.fit.services.progression;
 
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Component
@@ -30,6 +32,27 @@ public class ProgressionClassifier {
             return ProgressionState.PLATEAU;
         }
         return ProgressionState.PROGRESSING;
+    }
+
+    public ProgressionState applyRecency(ProgressionState state, List<SessionStrength> sessions) {
+        if (sessions == null || sessions.isEmpty()) {
+            return state;
+        }
+        SessionStrength last = sessions.get(sessions.size() - 1);
+        if (last.completedAt() == null) {
+            return state;
+        }
+        long days = ChronoUnit.DAYS.between(last.completedAt().toLocalDate(), LocalDate.now());
+        if (days < 0) {
+            return state;
+        }
+        if (config.deloadAfterDays() > 0 && days >= config.deloadAfterDays()) {
+            return ProgressionState.REGRESSING;
+        }
+        if (config.holdAfterDays() > 0 && days >= config.holdAfterDays()) {
+            return ProgressionState.PLATEAU;
+        }
+        return state;
     }
 
     private static int countTrailingStalls(List<SessionStrength> sessions) {

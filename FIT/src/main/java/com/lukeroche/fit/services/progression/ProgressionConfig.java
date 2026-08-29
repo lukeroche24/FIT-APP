@@ -11,5 +11,9 @@ public record ProgressionConfig(
 
         int stallsBeforePlateau,
 
-        double deloadFactor
+        double deloadFactor,
+
+        int holdAfterDays,
+
+        int deloadAfterDays
 ) {}

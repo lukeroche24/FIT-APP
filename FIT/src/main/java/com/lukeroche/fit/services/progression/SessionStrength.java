@@ -7,6 +7,7 @@ public record SessionStrength(
         LocalDateTime completedAt,
         double value,
         int reps,
-        double weight
+        double weight,
+        boolean prescriptionHit
 ) {
 }

@@ -38,7 +38,7 @@ public class ProgressionService {
                 loggedSetRepository.findCompletedSetHistory(userId, exercise.getId());
         List<SessionStrength> sessions = SessionBest.toSessions(sets, exercise.getLoadingType());
         Trend trend = TrendFit.fit(sessions, config.windowSize());
-        ProgressionState state = classifier.classify(sessions, trend);
+        ProgressionState state = classifier.applyRecency(classifier.classify(sessions, trend), sessions);
         LoadingScheme scheme = loadingSchemeFactory.forExercise(exercise);
         return recommender.recommend(state, sessions, exercise, scheme, minReps, maxReps);
     }
