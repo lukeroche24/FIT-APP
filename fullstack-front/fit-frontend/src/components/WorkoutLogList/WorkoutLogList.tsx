@@ -92,37 +92,50 @@ function WorkoutLogList() {
       <ErrorBanner message={error} />
       {loading && <p>Loading...</p>}
       {!loading && workoutLogs.length === 0 && (
-        <p className="text-muted">{query ? "No sessions match that search." : "No sessions logged yet."}</p>
+        <div className="empty-state">
+          <p>
+            {query
+              ? "No sessions match that search."
+              : "No sessions logged yet. Start one from a workout."}
+          </p>
+        </div>
       )}
       <ul className="list-group">
-        {workoutLogs.map((log) => (
-          <li
-            key={log.id}
-            className="list-group-item card-row d-flex justify-content-between align-items-center"
-            role="button"
-            onClick={() => navigate(`/workout-logs/${log.id}`)}
-          >
-            <span>
-              <strong>{log.name}</strong>{" "}
-              <span className={`badge-status ${log.completedAt ? "completed" : "in-progress"}`}>
-                {log.completedAt ? "Completed" : "In progress"}
-              </span>
-              <br />
-              <small className="text-muted">
-                {log.completedAt
-                  ? new Date(log.completedAt).toLocaleString()
-                  : `Started ${new Date(log.startedAt).toLocaleString()}`}
-              </small>
-            </span>
-            <button
-              type="button"
-              className="btn btn-outline-danger btn-sm"
-              onClick={(e) => handleDelete(e, log.id)}
+        {workoutLogs.map((log) => {
+          const exerciseCount = log.loggedExercises?.length ?? 0;
+          const when = log.completedAt
+            ? new Date(log.completedAt).toLocaleString()
+            : `Started ${new Date(log.startedAt).toLocaleString()}`;
+          const meta = [
+            when,
+            exerciseCount > 0 ? `${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          return (
+            <li
+              key={log.id}
+              className="list-group-item card-row d-flex justify-content-between align-items-center gap-2"
+              role="button"
+              onClick={() => navigate(`/workout-logs/${log.id}`)}
             >
-              Delete
-            </button>
-          </li>
-        ))}
+              <div className="list-row-body">
+                <span className="list-row-title">{log.name}</span>{" "}
+                <span className={`badge-status ${log.completedAt ? "completed" : "in-progress"}`}>
+                  {log.completedAt ? "Completed" : "In progress"}
+                </span>
+                <span className="list-row-meta">{meta}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={(e) => handleDelete(e, log.id)}
+              >
+                Delete
+              </button>
+            </li>
+          );
+        })}
       </ul>
       <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
       {!loading && totalElements > 0 && (

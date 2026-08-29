@@ -2,6 +2,8 @@
   background: var(--dark-surface);
   width: 100%;
   box-shadow: var(--shadow);
+  position: relative;
+  z-index: 20;
 }
 
 .app-navbar-inner {
@@ -10,7 +12,6 @@
   gap: 1.5rem;
   padding: 0.8rem max(var(--page-pad-x), env(safe-area-inset-right)) 0.8rem max(var(--page-pad-x), env(safe-area-inset-left));
   padding-top: max(0.8rem, env(safe-area-inset-top));
-  flex-wrap: wrap;
 }
 
 .app-navbar-brand {
@@ -19,12 +20,35 @@
   letter-spacing: 0.04em;
   color: var(--on-dark) !important;
   text-decoration: none;
+  order: 1;
+}
+
+.app-navbar-menu-toggle {
+  display: none;
+  border: 1px solid var(--dark-surface-alt);
+  border-radius: var(--bs-border-radius-sm);
+  background: transparent;
+  color: var(--on-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+
+.app-navbar-backdrop {
+  display: none;
+}
+
+.app-navbar-drawer {
+  display: contents;
 }
 
 .app-navbar-links {
   display: flex;
   gap: 0.25rem;
   flex: 1;
+  order: 2;
 }
 
 .app-navbar-link {
@@ -45,6 +69,13 @@
 .app-navbar-link.active {
   color: #fff !important;
   background: var(--accent);
+}
+
+.app-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  order: 4;
 }
 
 .app-navbar .btn-outline-secondary {
@@ -68,8 +99,88 @@
   color: #fff;
   background: var(--bs-success);
   cursor: pointer;
+  order: 3;
 }
 
 .app-navbar-resume:hover {
   filter: brightness(1.08);
+}
+
+@media (max-width: 767.98px) {
+  .app-navbar-inner {
+    gap: 0.6rem 0.75rem;
+  }
+
+  .app-navbar-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    position: relative;
+    z-index: 50;
+    order: 3;
+  }
+
+  .app-navbar-resume {
+    max-width: 9rem;
+    order: 2;
+  }
+
+  .app-navbar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: none;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 30;
+  }
+
+  .app-navbar-inner.is-open .app-navbar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .app-navbar-drawer {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(18.5rem, 86vw);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    background: var(--dark-surface);
+    box-shadow: var(--shadow-hover);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    z-index: 40;
+  }
+
+  .app-navbar-inner.is-open .app-navbar-drawer {
+    transform: translateX(0);
+  }
+
+  .app-navbar-links {
+    flex-direction: column;
+    gap: 0.15rem;
+    order: unset;
+  }
+
+  .app-navbar-link {
+    border-radius: var(--bs-border-radius-sm);
+  }
+
+  .app-navbar-actions {
+    margin-top: auto;
+    order: unset;
+  }
+
+  .app-navbar-actions .btn {
+    width: 100%;
+  }
 }

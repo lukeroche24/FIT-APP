@@ -1,24 +1,118 @@
 .set-row {
   background: var(--page-bg);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.set-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .set-number {
-  min-width: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.set-fail {
+.set-row-summary {
+  color: var(--text);
+}
+
+.set-fields,
+.set-extras {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   align-items: center;
-  gap: 0.3rem;
-  margin: 0;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  user-select: none;
 }
 
-.set-fail-input {
-  margin: 0;
-  float: none;
+.set-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.set-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.set-side-label {
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.set-input {
+  min-height: 2.75rem;
+  min-width: 5.5rem;
+  flex: 1 1 5.5rem;
+  max-width: 8.5rem;
+  font-size: 1rem;
+}
+
+.set-input-notes {
+  flex: 1 1 12rem;
+  max-width: none;
+}
+
+.set-fail-btn {
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--bs-border-radius-sm);
+  background: var(--card-bg);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.set-fail-btn.is-on {
+  background: rgba(var(--bs-danger-rgb), 0.12);
+  border-color: var(--bs-danger);
+  color: var(--bs-danger);
+}
+
+.set-remove {
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+}
+
+.set-logged-at {
+  margin-left: auto;
+}
+
+@media (max-width: 575.98px) {
+  .set-sides {
+    grid-template-columns: 1fr;
+  }
+
+  .set-input,
+  .set-fail-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    max-width: none;
+  }
+
+  .set-input-notes {
+    flex-basis: 100%;
+  }
 }

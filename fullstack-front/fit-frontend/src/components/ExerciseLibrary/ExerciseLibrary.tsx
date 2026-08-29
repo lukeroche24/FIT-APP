@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { listExercises } from "../../api/exercises";
 import { DEFAULT_PAGE_SIZE } from "../../api/paging";
-import type { ExerciseResponse } from "../../api/exercises";
+import type { ExerciseResponse, LoadingType } from "../../api/exercises";
 import { useDebouncedValue } from "../../hooks/useDebouncedValue";
 import { useRequireAuth } from "../../hooks/useRequireAuth";
 import { toErrorMessage } from "../../utils/errors";
@@ -11,6 +11,17 @@ import PageLayout from "../PageLayout/PageLayout";
 import Pager from "../Pager/Pager";
 import ExerciseForm from "../ExerciseForm/ExerciseForm";
 import "./ExerciseLibrary.css";
+
+const LOADING_LABELS: Record<LoadingType, string> = {
+  BARBELL: "Barbell",
+  DUMBBELL: "Dumbbell",
+  MACHINE: "Machine",
+  BODYWEIGHT: "Bodyweight",
+};
+
+function loadingLabel(type: ExerciseResponse["loadingType"]): string | null {
+  return type ? LOADING_LABELS[type] ?? type : null;
+}
 
 function ExerciseLibrary() {
   const isAuthenticated = useRequireAuth();
@@ -101,19 +112,30 @@ function ExerciseLibrary() {
       <ErrorBanner message={error} />
       {loading && <p>Loading...</p>}
       {!loading && exercises.length === 0 && (
-        <p className="text-muted">{query ? "No exercises match that search." : "No exercises yet."}</p>
+        <div className="empty-state">
+          <p>
+            {query
+              ? "No exercises match that search."
+              : "No exercises yet. Add one to use in your workouts."}
+          </p>
+        </div>
       )}
       <ul className="list-group">
-        {exercises.map((exercise) => (
-          <li
-            key={exercise.id}
-            className="list-group-item card-row"
-            role="button"
-            onClick={() => setSelectedExercise(exercise)}
-          >
-            {exercise.name}
-          </li>
-        ))}
+        {exercises.map((exercise) => {
+          const loading = loadingLabel(exercise.loadingType);
+          const meta = [loading, exercise.description?.trim() || null].filter(Boolean).join(" · ");
+          return (
+            <li
+              key={exercise.id}
+              className="list-group-item card-row"
+              role="button"
+              onClick={() => setSelectedExercise(exercise)}
+            >
+              <span className="list-row-title">{exercise.name}</span>
+              {meta && <span className="list-row-meta">{meta}</span>}
+            </li>
+          );
+        })}
       </ul>
       <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
       {!loading && totalElements > 0 && (

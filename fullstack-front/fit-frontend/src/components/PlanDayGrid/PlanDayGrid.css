@@ -64,6 +64,6 @@
 }
 
 .plan-day-badge.status-due {
-  background: rgba(255, 76, 41, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-dark);
 }

@@ -129,20 +129,22 @@ function Home() {
       <div className="section-label">Recent Sessions</div>
       {isLoading && <p>Loading...</p>}
       {!isLoading && recentLogs.length === 0 && (
-        <p className="text-muted">No sessions yet — start one from a workout.</p>
+        <div className="empty-state">
+          <p>No sessions yet — start one from a workout.</p>
+        </div>
       )}
       <ul className="list-group">
         {recentLogs.map((log) => (
           <li
             key={log.id}
-            className="list-group-item card-row d-flex justify-content-between align-items-center"
+            className="list-group-item card-row d-flex justify-content-between align-items-center gap-2"
             role="button"
             onClick={() => navigate(`/workout-logs/${log.id}`)}
           >
-            <span>
-              <strong>{log.name}</strong>{" "}
-              <small className="text-muted">{new Date(log.startedAt).toLocaleDateString()}</small>
-            </span>
+            <div className="list-row-body">
+              <span className="list-row-title">{log.name}</span>
+              <span className="list-row-meta">{new Date(log.startedAt).toLocaleDateString()}</span>
+            </div>
             <span className={`badge-status ${log.completedAt ? "completed" : "in-progress"}`}>
               {log.completedAt ? "Completed" : "In progress"}
             </span>

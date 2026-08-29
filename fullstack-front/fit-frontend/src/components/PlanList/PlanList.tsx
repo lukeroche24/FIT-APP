@@ -167,26 +167,34 @@ function PlanList() {
           />
           {loading && <p>Loading...</p>}
           {!loading && otherPlans.length === 0 && (
-            <p className="text-muted">
-              {query
-                ? "No plans match that search."
-                : activePlan
-                  ? "No other plans. Create another one if you want a spare template."
-                  : "No plans yet."}
-            </p>
+            <div className="empty-state">
+              <p>
+                {query
+                  ? "No plans match that search."
+                  : activePlan
+                    ? "No other plans. Create another one if you want a spare template."
+                    : "No plans yet. Create one to schedule your week."}
+              </p>
+            </div>
           )}
           {!loading && otherPlans.length > 0 && (
             <ul className="list-group">
               {otherPlans.map((plan) => (
                 <li
                   key={plan.id}
-                  className="list-group-item card-row d-flex justify-content-between align-items-center"
+                  className="list-group-item card-row d-flex justify-content-between align-items-center gap-2"
                   role="button"
                   onClick={() => navigate(`/plans/${plan.id}`)}
                 >
-                  <span>
-                    <strong>{plan.name}</strong> <small className="text-muted">{plan.weeks} weeks</small>
-                  </span>
+                  <div className="list-row-body">
+                    <span className="list-row-title">{plan.name}</span>
+                    <span className="list-row-meta">
+                      {plan.weeks} week{plan.weeks === 1 ? "" : "s"}
+                      {plan.days?.length
+                        ? ` · ${plan.days.length} day${plan.days.length === 1 ? "" : "s"} assigned`
+                        : ""}
+                    </span>
+                  </div>
                   <div className="d-flex gap-2">
                     <button
                       type="button"

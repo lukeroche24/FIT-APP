@@ -17,14 +17,13 @@ function PageLayout({
   className = "",
   children,
 }: PageLayoutProps) {
-  const layoutClass = ["container", "page-layout", `page-layout--${width}`, className]
-    .filter(Boolean)
-    .join(" ");
+  const shellClass = ["page-shell", className].filter(Boolean).join(" ");
+  const contentClass = ["page-shell-content", `page-layout--${width}`].join(" ");
 
   return (
-    <div className={layoutClass}>
+    <div className={shellClass}>
       {withNav && <NavBar />}
-      {children}
+      <div className={contentClass}>{children}</div>
     </div>
   );
 }

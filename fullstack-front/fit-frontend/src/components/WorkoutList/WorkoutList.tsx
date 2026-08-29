@@ -120,26 +120,46 @@ function WorkoutList() {
       <ErrorBanner message={error} />
       {loading && <p>Loading...</p>}
       {!loading && workouts.length === 0 && (
-        <p className="text-muted">{query ? "No workouts match that search." : "No workouts yet."}</p>
+        <div className="empty-state">
+          <p>
+            {query
+              ? "No workouts match that search."
+              : "No workouts yet. Create one, then start a session from it."}
+          </p>
+        </div>
       )}
       <ul className="list-group">
-        {workouts.map((workout) => (
-          <li
-            key={workout.id}
-            className="list-group-item card-row d-flex justify-content-between align-items-center"
-            role="button"
-            onClick={() => navigate(`/workouts/${workout.id}`)}
-          >
-            {workout.name}
-            <button
-              type="button"
-              className="btn btn-outline-danger btn-sm"
-              onClick={(e) => handleDelete(e, workout.id)}
+        {workouts.map((workout) => {
+          const exerciseCount = workout.exercises?.length ?? 0;
+          const parts = [
+            exerciseCount > 0 ? `${exerciseCount} exercise${exerciseCount === 1 ? "" : "s"}` : null,
+            workout.description?.trim() || null,
+          ].filter(Boolean) as string[];
+          if (parts.length === 0 && workout.createdAt) {
+            parts.push(`Created ${new Date(workout.createdAt).toLocaleDateString()}`);
+          }
+          const meta = parts.join(" · ");
+          return (
+            <li
+              key={workout.id}
+              className="list-group-item card-row d-flex justify-content-between align-items-center gap-2"
+              role="button"
+              onClick={() => navigate(`/workouts/${workout.id}`)}
             >
-              Delete
-            </button>
-          </li>
-        ))}
+              <div className="list-row-body">
+                <span className="list-row-title">{workout.name}</span>
+                {meta && <span className="list-row-meta">{meta}</span>}
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline-danger btn-sm"
+                onClick={(e) => handleDelete(e, workout.id)}
+              >
+                Delete
+              </button>
+            </li>
+          );
+        })}
       </ul>
       <Pager page={page} totalPages={totalPages} onPageChange={setPage} />
       {!loading && totalElements > 0 && (

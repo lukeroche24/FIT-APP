@@ -66,6 +66,27 @@ function formatLoggedSetSummary(
   return parts.length > 0 ? parts.join(" · ") : "No data";
 }
 
+function FailToggle({
+  label,
+  checked,
+  onToggle,
+}: {
+  label: string;
+  checked: boolean;
+  onToggle: (next: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`set-fail-btn${checked ? " is-on" : ""}`}
+      aria-pressed={checked}
+      onClick={() => onToggle(!checked)}
+    >
+      {label}
+    </button>
+  );
+}
+
 function LoggedSetRow({
   set,
   tracking,
@@ -145,138 +166,28 @@ function LoggedSetRow({
     commit(nextReps, nextWeight);
   };
 
+  const loggedAt = set.loggedAt ? (
+    <small className="text-muted set-logged-at">logged {new Date(set.loggedAt).toLocaleTimeString()}</small>
+  ) : null;
+
   if (readOnly) {
     return (
-      <div className="set-row d-flex align-items-center gap-2 mb-1 flex-wrap">
-        <span className="set-number">Set {set.setNumber}</span>
-        <span>{formatLoggedSetSummary(set, fields, limbs)}</span>
-        {set.loggedAt && (
-          <small className="text-muted">logged {new Date(set.loggedAt).toLocaleTimeString()}</small>
-        )}
+      <div className="set-row">
+        <div className="set-row-head">
+          <span className="set-number">Set {set.setNumber}</span>
+          {loggedAt}
+        </div>
+        <span className="set-row-summary">{formatLoggedSetSummary(set, fields, limbs)}</span>
       </div>
     );
   }
 
-  return (
-    <div className="set-row d-flex align-items-center gap-2 mb-1 flex-wrap">
-      <span className="set-number">Set {set.setNumber}</span>
-      {unilateral ? (
-        <>
-          <input
-            type="number"
-            className="form-control form-control-sm"
-            style={{ width: "5.5rem" }}
-            placeholder={`L ${repsPlaceholder}`}
-            value={reps}
-            onChange={(e) => setReps(e.target.value === "" ? "" : Number(e.target.value))}
-            onBlur={copyLeftToRightIfEmpty}
-          />
-          <label className="set-fail">
-            <input
-              type="checkbox"
-              className="form-check-input set-fail-input"
-              checked={failed}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setFailed(next);
-                commit(rightReps, rightWeight, next, rightFailed);
-              }}
-            />
-            Fail L
-          </label>
-          {fields.tracksWeight && (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              style={{ width: "6.5rem" }}
-              placeholder={`L ${weightPlaceholder}`}
-              value={weight}
-              min={weightAttrs.min}
-              step={weightAttrs.step}
-              onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))}
-              onBlur={copyLeftToRightIfEmpty}
-            />
-          )}
-          <input
-            type="number"
-            className="form-control form-control-sm"
-            style={{ width: "5.5rem" }}
-            placeholder={`R ${repsPlaceholder}`}
-            value={rightReps}
-            onChange={(e) => setRightReps(e.target.value === "" ? "" : Number(e.target.value))}
-            onBlur={() => commit()}
-          />
-          <label className="set-fail">
-            <input
-              type="checkbox"
-              className="form-check-input set-fail-input"
-              checked={rightFailed}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setRightFailed(next);
-                commit(rightReps, rightWeight, failed, next);
-              }}
-            />
-            Fail R
-          </label>
-          {fields.tracksWeight && (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              style={{ width: "6.5rem" }}
-              placeholder={`R ${weightPlaceholder}`}
-              value={rightWeight}
-              min={weightAttrs.min}
-              step={weightAttrs.step}
-              onChange={(e) => setRightWeight(e.target.value === "" ? "" : Number(e.target.value))}
-              onBlur={() => commit()}
-            />
-          )}
-        </>
-      ) : (
-        <>
-          <input
-            type="number"
-            className="form-control form-control-sm"
-            style={{ width: "5.5rem" }}
-            placeholder={repsPlaceholder}
-            value={reps}
-            onChange={(e) => setReps(e.target.value === "" ? "" : Number(e.target.value))}
-            onBlur={() => commit()}
-          />
-          <label className="set-fail">
-            <input
-              type="checkbox"
-              className="form-check-input set-fail-input"
-              checked={failed}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setFailed(next);
-                commit(rightReps, rightWeight, next, rightFailed);
-              }}
-            />
-            Fail
-          </label>
-          {fields.tracksWeight && (
-            <input
-              type="number"
-              className="form-control form-control-sm"
-              style={{ width: "6.5rem" }}
-              placeholder={weightPlaceholder}
-              value={weight}
-              min={weightAttrs.min}
-              step={weightAttrs.step}
-              onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))}
-              onBlur={() => commit()}
-            />
-          )}
-        </>
-      )}
+  const extras = (
+    <div className="set-extras">
       {fields.tracksDuration && (
         <input
           type="number"
-          className="form-control form-control-sm"
-          style={{ width: "6rem" }}
+          className="form-control set-input"
           placeholder="Duration (s)"
           value={duration}
           onChange={(e) => setDuration(e.target.value === "" ? "" : Number(e.target.value))}
@@ -286,8 +197,7 @@ function LoggedSetRow({
       {fields.tracksDistance && (
         <input
           type="number"
-          className="form-control form-control-sm"
-          style={{ width: "6rem" }}
+          className="form-control set-input"
           placeholder="Distance (m)"
           value={distance}
           onChange={(e) => setDistance(e.target.value === "" ? "" : Number(e.target.value))}
@@ -296,23 +206,128 @@ function LoggedSetRow({
       )}
       <input
         type="text"
-        className="form-control form-control-sm"
-        style={{ width: "8rem" }}
+        className="form-control set-input set-input-notes"
         placeholder="Notes"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={() => commit()}
       />
-      {set.loggedAt && (
-        <small className="text-muted">logged {new Date(set.loggedAt).toLocaleTimeString()}</small>
+      {loggedAt}
+    </div>
+  );
+
+  return (
+    <div className="set-row">
+      <div className="set-row-head">
+        <span className="set-number">Set {set.setNumber}</span>
+        {onRemove && (
+          <button type="button" className="btn btn-outline-danger btn-sm set-remove" onClick={onRemove}>
+            x
+          </button>
+        )}
+      </div>
+      {unilateral ? (
+        <div className="set-sides">
+          <div className="set-side">
+            <span className="set-side-label">Left</span>
+            <input
+              type="number"
+              className="form-control set-input"
+              placeholder={repsPlaceholder}
+              value={reps}
+              onChange={(e) => setReps(e.target.value === "" ? "" : Number(e.target.value))}
+              onBlur={copyLeftToRightIfEmpty}
+            />
+            {fields.tracksWeight && (
+              <input
+                type="number"
+                className="form-control set-input"
+                placeholder={weightPlaceholder}
+                value={weight}
+                min={weightAttrs.min}
+                step={weightAttrs.step}
+                onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))}
+                onBlur={copyLeftToRightIfEmpty}
+              />
+            )}
+            <FailToggle
+              label="Fail"
+              checked={failed}
+              onToggle={(next) => {
+                setFailed(next);
+                commit(rightReps, rightWeight, next, rightFailed);
+              }}
+            />
+          </div>
+          <div className="set-side">
+            <span className="set-side-label">Right</span>
+            <input
+              type="number"
+              className="form-control set-input"
+              placeholder={repsPlaceholder}
+              value={rightReps}
+              onChange={(e) => setRightReps(e.target.value === "" ? "" : Number(e.target.value))}
+              onBlur={() => commit()}
+            />
+            {fields.tracksWeight && (
+              <input
+                type="number"
+                className="form-control set-input"
+                placeholder={weightPlaceholder}
+                value={rightWeight}
+                min={weightAttrs.min}
+                step={weightAttrs.step}
+                onChange={(e) => setRightWeight(e.target.value === "" ? "" : Number(e.target.value))}
+                onBlur={() => commit()}
+              />
+            )}
+            <FailToggle
+              label="Fail"
+              checked={rightFailed}
+              onToggle={(next) => {
+                setRightFailed(next);
+                commit(rightReps, rightWeight, failed, next);
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="set-fields">
+          <input
+            type="number"
+            className="form-control set-input"
+            placeholder={repsPlaceholder}
+            value={reps}
+            onChange={(e) => setReps(e.target.value === "" ? "" : Number(e.target.value))}
+            onBlur={() => commit()}
+          />
+          {fields.tracksWeight && (
+            <input
+              type="number"
+              className="form-control set-input"
+              placeholder={weightPlaceholder}
+              value={weight}
+              min={weightAttrs.min}
+              step={weightAttrs.step}
+              onChange={(e) => setWeight(e.target.value === "" ? "" : Number(e.target.value))}
+              onBlur={() => commit()}
+            />
+          )}
+          <FailToggle
+            label="Fail"
+            checked={failed}
+            onToggle={(next) => {
+              setFailed(next);
+              commit(rightReps, rightWeight, next, rightFailed);
+            }}
+          />
+        </div>
       )}
-      {onRemove && (
-        <button type="button" className="btn btn-outline-danger btn-sm" onClick={onRemove}>
-          x
-        </button>
-      )}
+      {extras}
     </div>
   );
 }
 
 export default LoggedSetRow;
+
+
