@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { copyWorkoutLogToLibrary } from "../../api/friends";
 import { getMe } from "../../api/users";
 import {
   addLoggedSet,
+  deleteWorkoutLog,
   finishSession,
   getWorkoutLog,
   removeLoggedExercise,
@@ -26,6 +27,7 @@ import "./WorkoutLogDetail.css";
 
 function WorkoutLogDetail() {
   const isAuthenticated = useRequireAuth();
+  const navigate = useNavigate();
   const { id } = useParams();
   const workoutLogId = Number(id);
   const { setInProgress, clearInProgress } = useActiveSession();
@@ -192,6 +194,23 @@ function WorkoutLogDetail() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!workoutLog) {
+      return;
+    }
+    if (!window.confirm("Delete this session?")) {
+      return;
+    }
+
+    try {
+      await deleteWorkoutLog(workoutLog.id);
+      clearInProgress(workoutLog.id);
+      navigate("/workout-logs");
+    } catch (err) {
+      setError(toErrorMessage(err, "Failed to delete session"));
+    }
+  };
+
   const handleCopy = async () => {
     if (!workoutLog) {
       return;
@@ -286,6 +305,11 @@ function WorkoutLogDetail() {
                 Edit
               </button>
             ))}
+          {isOwnLog && (
+            <button type="button" className="btn btn-outline-danger" onClick={handleDelete}>
+              Delete
+            </button>
+          )}
           {!isOwnLog && (
             <>
               <button
