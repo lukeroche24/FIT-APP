@@ -24,7 +24,5 @@ public class WorkoutResponse {
 
     private Date createdAt;
 
-    private Boolean visibility;
-
     private List<WorkoutExerciseResponse> exercises;
 }

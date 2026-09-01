@@ -21,6 +21,11 @@ public interface LoggedSetRepository extends CrudRepository<LoggedSetEntity, Lon
 
     List<LoggedSetEntity> findByLoggedExerciseEntity_IdOrderBySetNumberAsc(Long loggedExerciseId);
 
+    /**
+     * Completed logs only, and only sets with at least one side that recorded
+     * reps. In-progress sessions are excluded so an unfinished log cannot
+     * drive the next suggestion or strength numbers.
+     */
     @Query(""" 
             SELECT NEW com.lukeroche.fit.domain.projections.SetHistoryRow(
                 wl.id,

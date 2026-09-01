@@ -17,5 +17,7 @@ public class InProgressSessionResponse {
 
     private String name;
 
+    private Long sourceWorkoutId;
+
     private LocalDateTime startedAt;
 }

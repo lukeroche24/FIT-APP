@@ -13,6 +13,8 @@ import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
 import "./Home.css";
 
+const RECENT_SESSION_LIMIT = 5;
+
 function Home() {
   const isAuthenticated = useRequireAuth();
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ function Home() {
   const [exerciseCount, setExerciseCount] = useState(0);
   const [workoutCount, setWorkoutCount] = useState(0);
   const [recentLogs, setRecentLogs] = useState<WorkoutLogResponse[]>([]);
+  const [sessionCount, setSessionCount] = useState(0);
   const [nextWorkout, setNextWorkout] = useState<UpcomingWorkoutResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,13 +36,14 @@ function Home() {
     Promise.all([
       listExercises({ page: 0, size: 1 }),
       listWorkouts({ page: 0, size: 1 }),
-      listWorkoutLogs({ page: 0, size: 5 }),
+      listWorkoutLogs({ page: 0, size: RECENT_SESSION_LIMIT }),
       getNextWorkout(),
     ])
       .then(([exercises, workouts, logs, next]) => {
         setExerciseCount(exercises.totalElements);
         setWorkoutCount(workouts.totalElements);
-        setRecentLogs(logs.content);
+        setRecentLogs(logs.content.slice(0, RECENT_SESSION_LIMIT));
+        setSessionCount(logs.totalElements);
         setNextWorkout(next);
       })
       .catch((err) => setError(toErrorMessage(err, "Failed to load dashboard")))
@@ -98,8 +102,8 @@ function Home() {
           </div>
           <div className="col-4">
             <div className="stat">
-              <div className="stat-number">{recentLogs.length}</div>
-              <div className="stat-label">Recent Sessions</div>
+              <div className="stat-number">{sessionCount}</div>
+              <div className="stat-label">Sessions</div>
             </div>
           </div>
         </div>
@@ -126,7 +130,12 @@ function Home() {
         </div>
       </div>
 
-      <div className="section-label">Recent Sessions</div>
+      <div className="home-recent-header">
+        <div className="section-label mb-0">Recent Sessions</div>
+        {sessionCount > RECENT_SESSION_LIMIT && (
+          <Link to="/workout-logs">View all</Link>
+        )}
+      </div>
       {isLoading && <p>Loading...</p>}
       {!isLoading && recentLogs.length === 0 && (
         <div className="empty-state">

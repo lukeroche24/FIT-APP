@@ -4,7 +4,6 @@ import com.lukeroche.fit.domain.dto.exercise.ExerciseRequest;
 import com.lukeroche.fit.domain.dto.exercise.ExerciseResponse;
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
 import com.lukeroche.fit.mappers.ExerciseMapper;
-import com.lukeroche.fit.mappers.Mapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 

@@ -14,6 +14,4 @@ public class WorkoutRequest {
     private String name;
 
     private String description;
-
-    private Boolean visibility;
 }
