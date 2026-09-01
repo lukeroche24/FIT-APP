@@ -13,6 +13,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Spring {@link UserDetails} over {@link User}. {@link #getUsername()} is the
+ * email, matching the JWT subject and login identifier.
+ */
 @Getter
 @RequiredArgsConstructor
 public class FitUserDetails implements UserDetails {
@@ -21,6 +25,7 @@ public class FitUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Every account is ROLE_USER; there is no admin role.
         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 

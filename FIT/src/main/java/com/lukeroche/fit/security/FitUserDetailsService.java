@@ -8,6 +8,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+/**
+ * Loads by email because that is the JWT subject and login identifier.
+ */
 @RequiredArgsConstructor
 public class FitUserDetailsService implements UserDetailsService {
 

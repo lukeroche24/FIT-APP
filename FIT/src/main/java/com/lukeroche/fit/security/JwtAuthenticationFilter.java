@@ -14,6 +14,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Reads {@code Authorization: Bearer}, validates the JWT, and stores
+ * {@code userId} on the request. Invalid tokens are swallowed so the request
+ * continues unauthenticated and protected endpoints return 401.
+ */
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,11 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
+                // Controllers read userId from the request, not the SecurityContext principal.
                 if (userDetails instanceof FitUserDetails) {
                     request.setAttribute("userId", ((FitUserDetails) userDetails).getId());
                 }
             }
         } catch(Exception ex) {
+            // Expired or malformed JWT: do not 401 here, let the security chain deny the request.
             log.warn("Received invalid auth token");
         }
 

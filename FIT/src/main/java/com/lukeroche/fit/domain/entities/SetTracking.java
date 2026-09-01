@@ -1,5 +1,9 @@
 package com.lukeroche.fit.domain.entities;
 
+/**
+ * Which metrics a set records. Weight defaults on (null counts as tracked);
+ * duration and distance default off.
+ */
 public final class SetTracking {
 
     private SetTracking() {

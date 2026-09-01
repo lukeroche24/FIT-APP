@@ -1,5 +1,9 @@
 package com.lukeroche.fit.domain.entities;
 
+/**
+ * Limb pattern and independent-load defaults. Missing pattern is bilateral.
+ * Missing independentLoads is true only for dumbbells.
+ */
 public final class Laterality {
 
     private Laterality() {

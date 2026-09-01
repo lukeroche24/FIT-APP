@@ -10,6 +10,10 @@ export const DEFAULT_TRACKING: TrackingFlags = {
   tracksDistance: false,
 };
 
+/**
+ * Which fields a set records. Weight defaults on; duration and distance
+ * default off. Null weight is treated as tracked so older rows keep a kg field.
+ */
 export function trackingFrom(source?: {
   tracksWeight?: boolean | null;
   tracksDuration?: boolean | null;

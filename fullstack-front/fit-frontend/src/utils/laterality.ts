@@ -12,6 +12,10 @@ export const DEFAULT_LATERALITY: LateralityFlags = {
   independentLoads: false,
 };
 
+/**
+ * Resolves limb pattern and whether left/right loads are logged separately.
+ * Missing pattern is bilateral. Missing independentLoads follows dumbbell.
+ */
 export function lateralityFrom(source?: {
   limbPattern?: LimbPattern | null;
   independentLoads?: boolean | null;
@@ -37,6 +41,10 @@ export function isUnilateral(laterality: LateralityFlags): boolean {
   return laterality.limbPattern === "UNILATERAL";
 }
 
+/**
+ * True when the UI should show a weight field per hand/side: independent
+ * loads, or any non-bilateral pattern.
+ */
 export function isPerSideWeight(laterality: LateralityFlags): boolean {
   return (
     laterality.independentLoads ||
@@ -45,6 +53,7 @@ export function isPerSideWeight(laterality: LateralityFlags): boolean {
   );
 }
 
+/** Short label under set inputs, or null when a single load is enough. */
 export function perSideHint(laterality: LateralityFlags): string | null {
   if (laterality.limbPattern === "ALTERNATING") {
     return "Reps are per side";

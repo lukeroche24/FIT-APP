@@ -1,3 +1,7 @@
+/**
+ * Round `weight` onto `loadStep`. Zero stays 0; a positive weight that would
+ * snap to 0 is raised to one step so the field never shows an unloadable load.
+ */
 export function snapToLoadStep(
   weight: number,
   loadStep: number | null | undefined,
@@ -15,6 +19,7 @@ export function snapToLoadStep(
   return Math.round(snapped * 1000) / 1000;
 }
 
+/** HTML number-input `step`/`min`. Unknown step uses `any` so typing is free. */
 export function loadStepInputProps(loadStep: number | null | undefined): {
   step: number | "any";
   min: number;
