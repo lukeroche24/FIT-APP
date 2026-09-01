@@ -5,6 +5,11 @@ import com.lukeroche.fit.domain.entities.LoadingType;
 import com.lukeroche.fit.domain.entities.SetTracking;
 import org.springframework.stereotype.Component;
 
+/**
+ * Chooses {@link BodyweightLoading} or {@link StepLoading} from the exercise's
+ * loading type and {@code loadStep}. Weighted exercises must have a positive
+ * step stored on the row.
+ */
 @Component
 public class LoadingSchemeFactory {
 
@@ -28,6 +33,10 @@ public class LoadingSchemeFactory {
         return new StepLoading(loadStep);
     }
 
+    /**
+     * Snaps a user-entered or suggested load. Returns {@code weight} unchanged
+     * if the exercise has no usable scheme.
+     */
     public Float snapWeight(ExerciseEntity exercise, Float weight) {
         if (weight == null || exercise == null) {
             return weight;

@@ -1,5 +1,10 @@
 package com.lukeroche.fit.services.progression;
 
+/**
+ * For independent left/right loads, the side that limits the set: lower
+ * weight, or fewer reps at the same weight. A missing side is ignored so a
+ * bilateral log still works.
+ */
 public final class WeakerSide {
 
     public record Side(int reps, double weight) {

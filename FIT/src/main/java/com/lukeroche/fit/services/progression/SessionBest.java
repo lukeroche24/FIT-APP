@@ -10,11 +10,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Collapses completed sets into one {@link SessionStrength} per workout log.
+ * Trend uses the best successful set. Next-session reps/weight use actuals
+ * when every set hit its target, and the prescription when anything missed,
+ * so a typed 105 kg 1RM is not discarded in favour of a leftover planned load.
+ */
 public final class SessionBest {
 
     private SessionBest() {
     }
 
+    /**
+     * Groups {@code sets} by workout log, oldest session first.
+     * Logs with no dated attempts are skipped.
+     */
     public static List<SessionStrength> toSessions(List<SetHistoryRow> sets, LoadingType loadingType) {
         Map<Long, List<SetHistoryRow>> bySession = new LinkedHashMap<>();
         for (SetHistoryRow set : sets) {
@@ -77,6 +87,7 @@ public final class SessionBest {
                 reps = bestCompletedReps;
                 weight = bestCompletedWeight;
             } else {
+                // Repeat the written prescription, not the short or failed actuals.
                 reps = prescribedReps != null ? prescribedReps : (bestCompleted > 0 ? bestCompletedReps : bestAttemptReps);
                 weight = prescribedWeight != null ? prescribedWeight : (bestCompleted > 0 ? bestCompletedWeight : bestAttemptWeight);
             }
@@ -89,6 +100,10 @@ public final class SessionBest {
         return sessions;
     }
 
+    /**
+     * A set counts as complete when it is not marked failed and every logged
+     * side reached {@code targetReps}. No target means any positive reps count.
+     */
     static boolean setCompleted(SetHistoryRow set) {
         if (Boolean.TRUE.equals(set.failed()) || Boolean.TRUE.equals(set.rightFailed())) {
             return false;
@@ -110,6 +125,7 @@ public final class SessionBest {
 
     private static double sessionValue(WeakerSide.Side side, LoadingType loadingType) {
         if (loadingType == LoadingType.BODYWEIGHT) {
+            // Rank added load first, then reps, so 5 kg × 8 beats 0 kg × 12.
             return side.weight() * 1000 + side.reps();
         }
         return OneRepMax.epley(side.weight(), side.reps());

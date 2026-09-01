@@ -7,6 +7,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Fills {@link LoadingType} and {@code loadStep} when the user leaves them
+ * blank, using simple name hints (e.g. "cable" → machine, 5 kg steps).
+ */
 @Component
 public class LoadingTypeSuggestion {
 
@@ -32,6 +36,10 @@ public class LoadingTypeSuggestion {
         return LoadingType.BARBELL;
     }
 
+    /**
+     * Sets loading type from {@link #suggest(String)} if missing, then a default
+     * step: 2.5 kg barbell / loaded bodyweight, 2 kg dumbbell, 5 kg machine.
+     */
     public void applyDefaults(ExerciseEntity exerciseEntity) {
         if(exerciseEntity.getLoadingType() == null){
             exerciseEntity.setLoadingType(suggest(exerciseEntity.getName()));

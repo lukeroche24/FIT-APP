@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Entry point for next-session suggestions. Loads completed set history for an
+ * exercise, collapses it to one point per session, classifies the trend, then
+ * asks {@link ProgressionRecommender} for target reps and weight.
+ */
 @Service
 public class ProgressionService {
 
@@ -29,10 +34,19 @@ public class ProgressionService {
         this.recommender = recommender;
     }
 
+    /**
+     * Suggests the next load using the default hypertrophy range (6–12) when
+     * the workout does not specify min/max reps.
+     */
     public Recommendation forExercise(UUID userId, ExerciseEntity exercise) {
         return forExercise(userId, exercise, null, null);
     }
 
+    /**
+     * Suggests the next load for {@code exercise}, constrained to
+     * {@code minReps}–{@code maxReps} on the workout. A {@code null} range is
+     * treated as 6–12.
+     */
     public Recommendation forExercise(UUID userId, ExerciseEntity exercise, Integer minReps, Integer maxReps) {
         List<SetHistoryRow> sets =
                 loggedSetRepository.findCompletedSetHistory(userId, exercise.getId());

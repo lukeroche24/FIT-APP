@@ -2,6 +2,10 @@ package com.lukeroche.fit.services.progression;
 
 import java.util.List;
 
+/**
+ * Linear regression of {@link SessionStrength#value()} against session index
+ * for the last {@code windowSize} sessions.
+ */
 public final class TrendFit {
 
     private TrendFit() {

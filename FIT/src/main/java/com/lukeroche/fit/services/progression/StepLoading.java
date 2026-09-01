@@ -2,6 +2,11 @@ package com.lukeroche.fit.services.progression;
 
 import java.util.OptionalDouble;
 
+/**
+ * Uniform increment (barbell plates, dumbbell jumps, machine stack).
+ * {@code nextAbove} treats a value already on a step as exact so floating
+ * error does not skip or repeat a jump.
+ */
 public final class StepLoading implements LoadingScheme {
 
     private final double step;

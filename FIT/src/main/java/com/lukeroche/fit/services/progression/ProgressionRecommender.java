@@ -11,6 +11,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.OptionalDouble;
 
+/**
+ * Picks the next prescription from the last session, the workout's rep range,
+ * and time off. Same-range work uses double progression (add a rep, then add
+ * load). A last session outside the new range is converted via estimated 1RM
+ * instead of clamping and adding a plate.
+ */
 @Component
 public class ProgressionRecommender {
 
@@ -22,6 +28,15 @@ public class ProgressionRecommender {
         this.strengthConfig = strengthConfig;
     }
 
+    /**
+     * Returns the next target reps and weight for this exercise.
+     *
+     * @param state     trend label from {@link ProgressionClassifier}; layoff
+     *                  still overrides the load via hold/deload below
+     * @param sessions  completed sessions in chronological order
+     * @param minReps   workout minimum; {@code null} defaults to 6
+     * @param maxReps   workout maximum; {@code null} defaults to 12
+     */
     public Recommendation recommend(ProgressionState state,
                                   List<SessionStrength> sessions,
                                   ExerciseEntity exercise,
@@ -48,6 +63,7 @@ public class ProgressionRecommender {
         boolean deload = config.deloadAfterDays() > 0 && daysOff >= config.deloadAfterDays();
         boolean outsideRange = last.reps() < resolvedMin || last.reps() > resolvedMax;
 
+        // 1RM → 3RM (and similar) must convert, not add 2.5 kg on the old load.
         if (outsideRange) {
             if (bodyweightNoLoad) {
                 int reps = Math.min(Math.max(last.reps(), resolvedMin), resolvedMax);
@@ -71,6 +87,7 @@ public class ProgressionRecommender {
             return deload(last, scheme);
         }
 
+        // Miss any working set, or 14+ days off: repeat last load. Do not add a rep or plate.
         if (!last.prescriptionHit() || (config.holdAfterDays() > 0 && daysOff >= config.holdAfterDays())) {
             return hold(state, last, bodyweightNoLoad, scheme);
         }
@@ -82,6 +99,11 @@ public class ProgressionRecommender {
         return progress(state, last, resolvedMin, resolvedMax, scheme);
     }
 
+    /**
+     * Maps estimated 1RM onto {@code targetReps} with Epley inverted, then snaps
+     * to the exercise load step. Applies the deload factor when the user has
+     * been off long enough.
+     */
     private Recommendation convertToReps(ProgressionState state,
                                          List<SessionStrength> sessions,
                                          SessionStrength last,
@@ -97,6 +119,7 @@ public class ProgressionRecommender {
         return new Recommendation(state, targetReps, scheme.nearest(weight));
     }
 
+    /** Best Epley 1RM in the Strength estimated-1RM window, floored at the last session. */
     private double estimatedOneRm(List<SessionStrength> sessions, SessionStrength last) {
         double best = OneRepMax.epley(last.weight(), last.reps());
         int days = Math.max(0, strengthConfig.estimatedOneRmDays());
@@ -139,6 +162,8 @@ public class ProgressionRecommender {
         if (reps < maxReps) {
             return new Recommendation(state, reps + 1, last.weight());
         }
+
+        // Top of the range: add one load step and drop back to min reps.
 
         OptionalDouble nextWeight = scheme.nextAbove(last.weight());
         if (nextWeight.isEmpty()) {

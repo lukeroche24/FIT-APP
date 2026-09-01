@@ -2,6 +2,10 @@ package com.lukeroche.fit.services.progression;
 
 import java.util.OptionalDouble;
 
+/**
+ * Pure bodyweight: no external load. Progression is by reps only, so
+ * {@link #nextAbove(double)} is empty and snaps are 0.
+ */
 public final class BodyweightLoading implements LoadingScheme {
 
     @Override
