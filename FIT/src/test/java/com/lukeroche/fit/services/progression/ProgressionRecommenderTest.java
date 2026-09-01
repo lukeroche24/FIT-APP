@@ -186,6 +186,20 @@ class ProgressionRecommenderTest {
     }
 
     @Test
+    void extraRepsAfterAHitStayOnDoubleProgression() {
+        Recommendation rec = recommender.recommend(
+                ProgressionState.PROGRESSING,
+                List.of(session(9, 80, true, 0)),
+                barbell,
+                scheme,
+                8,
+                8);
+
+        assertEquals(8, rec.targetReps());
+        assertEquals(82.5, rec.targetWeight());
+    }
+
+    @Test
     void doubleProgressionAddsLoadAtTheTopOfTheRange() {
         Recommendation rec = recommender.recommend(
                 ProgressionState.PROGRESSING,

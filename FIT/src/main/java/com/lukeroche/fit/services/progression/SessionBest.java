@@ -45,6 +45,9 @@ public final class SessionBest {
             boolean prescriptionHit = true;
 
             for (SetHistoryRow set : entry.getValue()) {
+                if (!attempted(set)) {
+                    continue;
+                }
                 if (prescribedReps == null && set.targetReps() != null && set.targetReps() > 0) {
                     prescribedReps = set.targetReps();
                 }
@@ -100,27 +103,58 @@ public final class SessionBest {
         return sessions;
     }
 
-    /**
-     * A set counts as complete when it is not marked failed and every logged
-     * side reached {@code targetReps}. No target means any positive reps count.
-     */
-    static boolean setCompleted(SetHistoryRow set) {
-        if (Boolean.TRUE.equals(set.failed()) || Boolean.TRUE.equals(set.rightFailed())) {
+    /** True when every attempted set reached its target. Empty leftover sets are ignored. */
+    public static boolean prescriptionHit(List<SetHistoryRow> sets) {
+        if (sets == null || sets.isEmpty()) {
             return false;
         }
-        Integer target = set.targetReps();
-        if (target == null || target <= 0) {
-            return true;
+        boolean anyAttempt = false;
+        for (SetHistoryRow set : sets) {
+            if (!attempted(set)) {
+                continue;
+            }
+            anyAttempt = true;
+            if (!setCompleted(set)) {
+                return false;
+            }
         }
+        return anyAttempt;
+    }
+
+    static boolean attempted(SetHistoryRow set) {
+        return (set.actualReps() != null && set.actualReps() > 0)
+                || (set.rightReps() != null && set.rightReps() > 0);
+    }
+
+    /**
+     * A set counts as complete when every logged side completed {@code targetReps}
+     * successful reps. A fail tick means the last logged rep did not count, so
+     * 8 + fail at a target of 8 is a miss (failed the 8th) while 9 + fail is a
+     * hit (failed the 9th after locking in 8). No target means any positive
+     * reps count unless a fail flag is set.
+     */
+    static boolean setCompleted(SetHistoryRow set) {
         boolean hasLeft = set.actualReps() != null && set.actualReps() > 0;
         boolean hasRight = set.rightReps() != null && set.rightReps() > 0;
         if (!hasLeft && !hasRight) {
             return false;
         }
-        if (hasLeft && set.actualReps() < target) {
+        Integer target = set.targetReps();
+        if (target == null || target <= 0) {
+            return !Boolean.TRUE.equals(set.failed()) && !Boolean.TRUE.equals(set.rightFailed());
+        }
+        if (hasLeft && successfulReps(set.actualReps(), set.failed()) < target) {
             return false;
         }
-        return !hasRight || set.rightReps() >= target;
+        return !hasRight || successfulReps(set.rightReps(), set.rightFailed()) >= target;
+    }
+
+    /** Logged reps minus the failed last rep, if the fail tick is set. */
+    static int successfulReps(Integer reps, Boolean failed) {
+        if (reps == null || reps <= 0) {
+            return 0;
+        }
+        return Boolean.TRUE.equals(failed) ? reps - 1 : reps;
     }
 
     private static double sessionValue(WeakerSide.Side side, LoadingType loadingType) {

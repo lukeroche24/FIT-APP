@@ -9,6 +9,7 @@ import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import ExerciseForm from "../ExerciseForm/ExerciseForm";
 import Pager from "../Pager/Pager";
 import TrackingCheckboxes from "../TrackingCheckboxes/TrackingCheckboxes";
+import RepTargetFields from "../RepTargetFields/RepTargetFields";
 import "./AddExerciseToWorkout.css";
 
 interface Props {
@@ -73,34 +74,15 @@ function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
   if (creatingNew) {
     return (
       <div className="p-3">
-        <div className="row mb-3">
-          <div className="col">
-            <label htmlFor="newMinReps" className="form-label">
-              Min reps for this workout
-            </label>
-            <input
-              id="newMinReps"
-              type="number"
-              min="1"
-              className="form-control"
-              value={minReps}
-              onChange={(e) => setMinReps(e.target.value)}
-            />
-          </div>
-          <div className="col">
-            <label htmlFor="newMaxReps" className="form-label">
-              Max reps for this workout
-            </label>
-            <input
-              id="newMaxReps"
-              type="number"
-              min="1"
-              className="form-control"
-              value={maxReps}
-              onChange={(e) => setMaxReps(e.target.value)}
-            />
-          </div>
-        </div>
+        <RepTargetFields
+          idPrefix="new-"
+          minReps={parsedMin ?? null}
+          maxReps={parsedMax ?? null}
+          onChange={(min, max) => {
+            setMinReps(min == null ? "" : String(min));
+            setMaxReps(max == null ? "" : String(max));
+          }}
+        />
         <ExerciseForm
           onSaved={handleCreatedAndAdd}
           onDeleted={() => {}}
@@ -114,35 +96,16 @@ function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
     <div className="p-3">
       <h2>Add Exercise</h2>
       <ErrorBanner message={error} />
-      <div className="row mb-3">
-        <div className="col">
-          <label htmlFor="minReps" className="form-label">
-            Min reps
-          </label>
-          <input
-            id="minReps"
-            type="number"
-            min="1"
-            className="form-control"
-            value={minReps}
-            onChange={(e) => setMinReps(e.target.value)}
-          />
-        </div>
-        <div className="col">
-          <label htmlFor="maxReps" className="form-label">
-            Max reps
-          </label>
-          <input
-            id="maxReps"
-            type="number"
-            min="1"
-            className="form-control"
-            value={maxReps}
-            onChange={(e) => setMaxReps(e.target.value)}
-          />
-          </div>
-        </div>
-        <div className="mb-3">
+      <RepTargetFields
+        idPrefix="add-"
+        minReps={parsedMin ?? null}
+        maxReps={parsedMax ?? null}
+        onChange={(min, max) => {
+          setMinReps(min == null ? "" : String(min));
+          setMaxReps(max == null ? "" : String(max));
+        }}
+      />
+      <div className="mb-3">
           <div className="form-label">Log per set</div>
           <TrackingCheckboxes
             idPrefix="add-"

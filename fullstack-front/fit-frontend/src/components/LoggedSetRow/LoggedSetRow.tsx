@@ -89,7 +89,7 @@ function FailToggle({
 
 /**
  * One logged set. Unilateral rows copy left into empty right on blur.
- * Failed flags are ignored by progression; weights snap to the exercise step.
+ * Fail on the target rep is a miss; fail on a bonus rep is still a hit.
  */
 function LoggedSetRow({
   set,

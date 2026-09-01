@@ -61,7 +61,10 @@ public class ProgressionRecommender {
         boolean bodyweightNoLoad = bodyweight && !loadedBodyweight;
         long daysOff = daysSince(last);
         boolean deload = config.deloadAfterDays() > 0 && daysOff >= config.deloadAfterDays();
-        boolean outsideRange = last.reps() < resolvedMin || last.reps() > resolvedMax;
+        // Extra reps beyond max after a hit (e.g. 9 when the workout is 8s) stay
+        // on double progression. 1RM conversion is only for a true range change.
+        boolean outsideRange = last.reps() < resolvedMin
+                || (last.reps() > resolvedMax && !last.prescriptionHit());
 
         // 1RM → 3RM (and similar) must convert, not add 2.5 kg on the old load.
         if (outsideRange) {

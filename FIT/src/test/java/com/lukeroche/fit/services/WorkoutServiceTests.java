@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class WorkoutServiceTests extends AbstractServiceTests {
 
@@ -21,7 +22,7 @@ class WorkoutServiceTests extends AbstractServiceTests {
     WorkoutLogService workoutLogService;
 
     @Test
-    void copyKeepsTheSourceRepRangeAndUsesLoggedActualsForPlannedSets() {
+    void copyKeepsTheSourceRepRangeAndSetCountWithoutCopyingLoad() {
         User owner = newUser("ow");
         WorkoutEntity source = workoutWithPlannedSet(owner, 8, 80f);
         WorkoutLogEntity log = workoutLogService.startSession(source.getId(), owner.getId(), null);
@@ -43,8 +44,8 @@ class WorkoutServiceTests extends AbstractServiceTests {
         assertEquals(6, slot.getMinReps());
         assertEquals(12, slot.getMaxReps());
         PlannedSetEntity planned = slot.getPlannedSets().getFirst();
-        assertEquals(5, planned.getTargetReps());
-        assertEquals(70f, planned.getTargetWeight());
+        assertNull(planned.getTargetReps());
+        assertNull(planned.getTargetWeight());
         assertEquals(benchOf(owner).getId(), slot.getExerciseEntity().getId());
     }
 

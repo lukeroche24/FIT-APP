@@ -58,10 +58,10 @@ class SessionBestTest {
     }
 
     @Test
-    void missesWhenASetIsMarkedFailed() {
+    void missesWhenASetFailsShortOfTarget() {
         List<SessionStrength> sessions = SessionBest.toSessions(List.of(
                 set(1, 8, 100f, 8, false),
-                set(2, 8, 100f, 8, true)
+                set(2, 5, 100f, 8, true)
         ), LoadingType.BARBELL);
 
         assertFalse(sessions.getFirst().prescriptionHit());
@@ -69,9 +69,53 @@ class SessionBestTest {
     }
 
     @Test
-    void missesWhenTheRightSideIsMarkedFailed() {
+    void missesWhenFailTickIsOnTheTargetRep() {
+        List<SessionStrength> sessions = SessionBest.toSessions(List.of(
+                set(1, 8, 100f, 8, false),
+                set(2, 8, 100f, 8, false),
+                set(3, 8, 100f, 8, true)
+        ), LoadingType.BARBELL);
+
+        assertFalse(sessions.getFirst().prescriptionHit());
+        assertEquals(8, sessions.getFirst().reps());
+        assertEquals(100.0, sessions.getFirst().weight());
+    }
+
+    @Test
+    void hitsWhenFailTickIsOnABonusRep() {
+        List<SessionStrength> sessions = SessionBest.toSessions(List.of(
+                set(1, 8, 100f, 8, false),
+                set(2, 9, 100f, 8, true)
+        ), LoadingType.BARBELL);
+
+        assertTrue(sessions.getFirst().prescriptionHit());
+        assertEquals(9, sessions.getFirst().reps());
+    }
+
+    @Test
+    void ignoresEmptyExtraSetsWhenJudgingHit() {
+        List<SessionStrength> sessions = SessionBest.toSessions(List.of(
+                set(1, 8, 100f, 8, false),
+                new SetHistoryRow(1L, NOW, 2, null, null, null, null, 8, 100f, false, false)
+        ), LoadingType.BARBELL);
+
+        assertTrue(sessions.getFirst().prescriptionHit());
+        assertEquals(8, sessions.getFirst().reps());
+    }
+
+    @Test
+    void missesWhenTheRightSideFailsOnTheTargetRep() {
         List<SessionStrength> sessions = SessionBest.toSessions(List.of(
                 new SetHistoryRow(1L, NOW, 1, 8, 40f, 8, 40f, 8, 40f, false, true)
+        ), LoadingType.DUMBBELL);
+
+        assertFalse(sessions.getFirst().prescriptionHit());
+    }
+
+    @Test
+    void missesWhenTheRightSideFailsShortOfTarget() {
+        List<SessionStrength> sessions = SessionBest.toSessions(List.of(
+                new SetHistoryRow(1L, NOW, 1, 8, 40f, 5, 40f, 8, 40f, false, true)
         ), LoadingType.DUMBBELL);
 
         assertFalse(sessions.getFirst().prescriptionHit());

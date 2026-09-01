@@ -7,8 +7,9 @@ import java.time.LocalDateTime;
 
 /**
  * One performed set. {@code actual*} is what the user logged; {@code target*}
- * is what progression asked for and is not overwritten on edit. Failed sides
- * are ignored when computing the next load.
+ * is what progression asked for and is not overwritten on edit. A fail tick
+ * drops the last logged rep, so failing the target rep is a miss and failing
+ * a bonus rep is still a hit.
  */
 @Getter
 @Setter

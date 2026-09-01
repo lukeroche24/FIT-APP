@@ -314,6 +314,11 @@ function WorkoutLogDetail() {
                 Edit
               </button>
             ))}
+          {isOwnLog && !isCompleted && (
+            <button type="button" className="btn btn-success" onClick={handleFinish}>
+              Finish Session
+            </button>
+          )}
           {isOwnLog && (
             <button type="button" className="btn btn-outline-danger" onClick={handleDelete}>
               Delete
@@ -370,12 +375,6 @@ function WorkoutLogDetail() {
         workoutLog.notes && <p>{workoutLog.notes}</p>
       )}
 
-      {isOwnLog && !isCompleted && (
-        <button type="button" className="btn btn-success mb-3" onClick={handleFinish}>
-          Finish Session
-        </button>
-      )}
-
       <ul className="list-group mb-3">
         {exercises.map((loggedExercise) => (
           <li key={loggedExercise.id} className="list-group-item card-row">
@@ -430,6 +429,12 @@ function WorkoutLogDetail() {
       {canEdit && (
         <button type="button" className="btn btn-primary" onClick={() => setIsAddingExercise(true)}>
           + Add Exercise
+        </button>
+      )}
+
+      {isOwnLog && !isCompleted && (
+        <button type="button" className="btn btn-success mt-3 d-block" onClick={handleFinish}>
+          Finish Session
         </button>
       )}
 

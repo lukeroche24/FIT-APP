@@ -7,7 +7,6 @@ import com.lukeroche.fit.domain.entities.*;
 import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.WorkoutService;
 import com.lukeroche.fit.services.progression.LoadingTypeSuggestion;
-import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +20,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Persistence for {@link WorkoutService}. Planned weights are snapped to the
- * exercise load step. Copy-to-library is a deep copy of log rows into a new
- * template owned by the copier.
+ * Persistence for {@link WorkoutService}. Planned sets are structure only
+ * (count, rest, duration, distance). Load is seeded when a session starts.
  */
 @Service
 public class WorkoutServiceImpl implements WorkoutService {
@@ -38,13 +36,11 @@ public class WorkoutServiceImpl implements WorkoutService {
     private final LoggedExerciseRepository loggedExerciseRepository;
     private final LoadingTypeSuggestion loadingTypeSuggestion;
     private final LoggedSetRepository loggedSetRepository;
-    private final LoadingSchemeFactory loadingSchemeFactory;
 
     public WorkoutServiceImpl(WorkoutRepository workoutRepository, ExerciseRepository exerciseRepository,
                               WorkoutExerciseRepository workoutExerciseRepository, PlannedSetRepository plannedSetRepository,
                               WorkoutLogRepository workoutLogRepository, LoggedExerciseRepository loggedExerciseRepository,
-                              LoggedSetRepository loggedSetRepository, LoadingTypeSuggestion loadingTypeSuggestion,
-                              LoadingSchemeFactory loadingSchemeFactory) {
+                              LoggedSetRepository loggedSetRepository, LoadingTypeSuggestion loadingTypeSuggestion) {
         this.workoutRepository = workoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.exerciseRepository = exerciseRepository;
@@ -53,7 +49,6 @@ public class WorkoutServiceImpl implements WorkoutService {
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
         this.loadingTypeSuggestion = loadingTypeSuggestion;
-        this.loadingSchemeFactory = loadingSchemeFactory;
     }
 
     @Override
@@ -204,13 +199,13 @@ public class WorkoutServiceImpl implements WorkoutService {
         WorkoutExerciseEntity workoutExercise = workoutExerciseRepository.findById(workoutExerciseId)
                 .orElseThrow(() -> new EntityNotFoundException("Workout exercise does not exist"));
 
+        if (request == null) {
+            request = new PlannedSetRequest();
+        }
+
         PlannedSetEntity plannedSet = PlannedSetEntity.builder()
                 .workoutExerciseEntity(workoutExercise)
                 .setNumber((int) (plannedSetRepository.countByWorkoutExerciseEntity_Id(workoutExerciseId) + 1))
-                .targetReps(request.getTargetReps())
-                .targetWeight(loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), request.getTargetWeight()))
-                .rightReps(request.getRightReps())
-                .rightWeight(loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), request.getRightWeight()))
                 .targetDurationSeconds(request.getTargetDurationSeconds())
                 .targetDistance(request.getTargetDistance())
                 .restTimeSeconds(request.getRestTimeSeconds())
@@ -223,13 +218,13 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     public PlannedSetEntity updatePlannedSet(Long setId, PlannedSetRequest request) {
         return plannedSetRepository.findById(setId).map(existingSet -> {
-            ExerciseEntity exercise = existingSet.getWorkoutExerciseEntity().getExerciseEntity();
-            Optional.ofNullable(request.getTargetReps()).ifPresent(existingSet::setTargetReps);
-            Optional.ofNullable(request.getTargetWeight())
-                    .ifPresent(weight -> existingSet.setTargetWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
-            Optional.ofNullable(request.getRightReps()).ifPresent(existingSet::setRightReps);
-            Optional.ofNullable(request.getRightWeight())
-                    .ifPresent(weight -> existingSet.setRightWeight(loadingSchemeFactory.snapWeight(exercise, weight)));
+            if (request == null) {
+                return existingSet;
+            }
+            existingSet.setTargetReps(null);
+            existingSet.setTargetWeight(null);
+            existingSet.setRightReps(null);
+            existingSet.setRightWeight(null);
             Optional.ofNullable(request.getTargetDurationSeconds()).ifPresent(existingSet::setTargetDurationSeconds);
             Optional.ofNullable(request.getTargetDistance()).ifPresent(existingSet::setTargetDistance);
             Optional.ofNullable(request.getRestTimeSeconds()).ifPresent(existingSet::setRestTimeSeconds);
@@ -307,10 +302,6 @@ public class WorkoutServiceImpl implements WorkoutService {
                     .map(loggedSet -> PlannedSetEntity.builder()
                             .workoutExerciseEntity(newWorkoutExercise)
                             .setNumber(loggedSet.getSetNumber())
-                            .targetReps(loggedSet.getActualReps())
-                            .targetWeight(loggedSet.getActualWeight())
-                            .rightReps(loggedSet.getRightReps())
-                            .rightWeight(loggedSet.getRightWeight())
                             .targetDurationSeconds(loggedSet.getActualDurationSeconds())
                             .targetDistance(loggedSet.getActualDistance())
                             .restTimeSeconds(null)

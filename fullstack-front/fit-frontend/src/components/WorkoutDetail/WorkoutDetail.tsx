@@ -13,8 +13,10 @@ import PageLayout from "../PageLayout/PageLayout";
 import AddExerciseToWorkout from "../AddExerciseToWorkout/AddExerciseToWorkout";
 import PlannedSetRow from "../PlannedSetRow/PlannedSetRow";
 import TrackingCheckboxes from "../TrackingCheckboxes/TrackingCheckboxes";
+import RepTargetFields from "../RepTargetFields/RepTargetFields";
 import { trackingFrom, type TrackingFlags } from "../../utils/tracking";
 import { lateralityFrom, perSideHint } from "../../utils/laterality";
+import { formatRepTarget } from "../../utils/repTarget";
 import "./WorkoutDetail.css";
 
 interface WorkoutPageState {
@@ -373,51 +375,29 @@ function WorkoutDetail() {
                 {editing ? `\u2630 ${workoutExercise.exercise.name}` : workoutExercise.exercise.name}
               </strong>
               {editing ? (
-                <div className="d-flex align-items-center gap-2">
-                  <label className="small text-muted mb-0">Min</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className="form-control form-control-sm"
-                    style={{ width: "4.5rem" }}
-                    value={workoutExercise.minReps ?? ""}
-                    onChange={(e) =>
-                      handleUpdateRepRange(
-                        workoutExercise.id,
-                        e.target.value === "" ? null : Number(e.target.value),
-                        workoutExercise.maxReps,
-                      )
-                    }
-                  />
-                  <label className="small text-muted mb-0">Max</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className="form-control form-control-sm"
-                    style={{ width: "4.5rem" }}
-                    value={workoutExercise.maxReps ?? ""}
-                    onChange={(e) =>
-                      handleUpdateRepRange(
-                        workoutExercise.id,
-                        workoutExercise.minReps,
-                        e.target.value === "" ? null : Number(e.target.value),
-                      )
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={() => handleRemoveExercise(workoutExercise.id)}
-                  >
-                    Remove
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() => handleRemoveExercise(workoutExercise.id)}
+                >
+                  Remove
+                </button>
               ) : (
                 <small className="text-muted">
-                  Reps {workoutExercise.minReps ?? 6}–{workoutExercise.maxReps ?? 12}
+                  {formatRepTarget(workoutExercise.minReps, workoutExercise.maxReps)}
                 </small>
               )}
             </div>
+            {editing && (
+              <RepTargetFields
+                idPrefix={`we-${workoutExercise.id}-reps-`}
+                minReps={workoutExercise.minReps}
+                maxReps={workoutExercise.maxReps}
+                onChange={(minReps, maxReps) =>
+                  handleUpdateRepRange(workoutExercise.id, minReps, maxReps)
+                }
+              />
+            )}
             {editing && (
               <div className="mb-2">
                 <div className="form-label small mb-1">Log per set</div>

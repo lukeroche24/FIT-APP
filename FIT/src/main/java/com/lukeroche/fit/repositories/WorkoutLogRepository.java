@@ -29,6 +29,9 @@ public interface WorkoutLogRepository extends CrudRepository<WorkoutLogEntity, L
     Optional<WorkoutLogEntity> findFirstByCreatedByUserIdAndCompletedAtIsNullOrderByStartedAtDesc(
             UUID createdByUserId);
 
+    Optional<WorkoutLogEntity> findFirstByCreatedByUserIdAndSourceWorkoutIdAndCompletedAtIsNotNullOrderByCompletedAtDesc(
+            UUID createdByUserId, Long sourceWorkoutId);
+
     boolean existsByIdAndCreatedByUserId(Long id, UUID createdByUserId);
 
     List<WorkoutLogEntity> findByCreatedByUserIdAndCompletedAtGreaterThanEqualAndCompletedAtLessThan(

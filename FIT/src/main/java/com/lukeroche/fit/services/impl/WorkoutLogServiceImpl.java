@@ -5,11 +5,14 @@ import com.lukeroche.fit.domain.dto.workoutlog.LoggedSetRequest;
 import com.lukeroche.fit.domain.dto.workoutlog.StartSessionRequest;
 import com.lukeroche.fit.domain.entities.*;
 import com.lukeroche.fit.repositories.*;
+import com.lukeroche.fit.domain.projections.SetHistoryRow;
 import com.lukeroche.fit.services.FriendshipService;
 import com.lukeroche.fit.services.WorkoutLogService;
+import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
+import com.lukeroche.fit.services.progression.ProgressionConfig;
 import com.lukeroche.fit.services.progression.ProgressionService;
 import com.lukeroche.fit.services.progression.Recommendation;
-import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
+import com.lukeroche.fit.services.progression.SessionBest;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,9 +21,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +34,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Persistence for {@link WorkoutLogService}. Starting a session is the main
- * integration with the progression engine: each planned set is seeded with the
- * suggested load, stored as both actual (editable) and target (what was asked).
+ * Persistence for {@link WorkoutLogService}. Starting a session clones the
+ * workout structure, then seeds actuals from progression (or a recent miss on
+ * this template) while targets stay the programmed prescription.
  */
 @Service
 public class WorkoutLogServiceImpl implements WorkoutLogService {
@@ -45,6 +51,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     private final FriendshipService friendshipService;
     private final ProgressionService progressionService;
     private final LoadingSchemeFactory loadingSchemeFactory;
+    private final ProgressionConfig progressionConfig;
 
     public WorkoutLogServiceImpl(WorkoutLogRepository workoutLogRepository,
                                   LoggedExerciseRepository loggedExerciseRepository,
@@ -55,7 +62,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                                   ExerciseRepository exerciseRepository,
                                   FriendshipService friendshipService,
                                   ProgressionService progressionService,
-                                  LoadingSchemeFactory loadingSchemeFactory) {
+                                  LoadingSchemeFactory loadingSchemeFactory,
+                                  ProgressionConfig progressionConfig) {
         this.workoutLogRepository = workoutLogRepository;
         this.loggedExerciseRepository = loggedExerciseRepository;
         this.loggedSetRepository = loggedSetRepository;
@@ -66,6 +74,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         this.friendshipService = friendshipService;
         this.progressionService = progressionService;
         this.loadingSchemeFactory = loadingSchemeFactory;
+        this.progressionConfig = progressionConfig;
     }
 
     @Override
@@ -90,19 +99,21 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
 
         List<WorkoutExerciseEntity> sourceExercises =
                 workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(sourceWorkoutId);
+        LastWorkoutSnapshot lastWorkout = lastCompletedWorkout(userId, sourceWorkoutId);
 
         for (WorkoutExerciseEntity workoutExercise : sourceExercises) {
+            ExerciseEntity exercise = workoutExercise.getExerciseEntity();
             LoggedExerciseEntity loggedExercise = loggedExerciseRepository.save(LoggedExerciseEntity.builder()
                     .workoutLogEntity(workoutLog)
-                    .exerciseEntity(workoutExercise.getExerciseEntity())
+                    .exerciseEntity(exercise)
                     .orderIndex(workoutExercise.getOrderIndex())
                     .tracksWeight(SetTracking.tracksWeight(workoutExercise.getTracksWeight()))
                     .tracksDuration(SetTracking.tracksDuration(workoutExercise.getTracksDuration()))
                     .tracksDistance(SetTracking.tracksDistance(workoutExercise.getTracksDistance()))
-                    .limbPattern(Laterality.pattern(workoutExercise.getExerciseEntity().getLimbPattern()))
+                    .limbPattern(Laterality.pattern(exercise.getLimbPattern()))
                     .independentLoads(Laterality.independentLoads(
-                            workoutExercise.getExerciseEntity().getIndependentLoads(),
-                            workoutExercise.getExerciseEntity().getLoadingType()))
+                            exercise.getIndependentLoads(),
+                            exercise.getLoadingType()))
                     .build());
 
             List<PlannedSetEntity> plannedSets =
@@ -110,56 +121,34 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
 
             Recommendation suggestion = progressionService.forExercise(
                     userId,
-                    workoutExercise.getExerciseEntity(),
+                    exercise,
                     workoutExercise.getMinReps(),
                     workoutExercise.getMaxReps());
 
-            List<LoggedSetEntity> loggedSets = plannedSets.stream()
-                    .map(plannedSet -> {
-                        // Suggestion wins when history exists; planned set is the blank-slate fallback.
-                        Integer reps = suggestion.targetReps() != null
-                                ? suggestion.targetReps()
-                                : plannedSet.getTargetReps();
-                        Float weight = null;
-                        if (SetTracking.tracksWeight(workoutExercise.getTracksWeight())) {
-                            weight = suggestion.targetWeight() != null
-                                    ? Float.valueOf(suggestion.targetWeight().floatValue())
-                                    : plannedSet.getTargetWeight();
-                        }
-                        boolean unilateral = Laterality.isUnilateral(workoutExercise.getExerciseEntity().getLimbPattern());
-                        Integer rightReps = null;
-                        Float rightWeight = null;
-                        if (unilateral) {
-                            rightReps = plannedSet.getRightReps() != null ? plannedSet.getRightReps() : reps;
-                            if (SetTracking.tracksWeight(workoutExercise.getTracksWeight())) {
-                                rightWeight = plannedSet.getRightWeight() != null
-                                        ? plannedSet.getRightWeight()
-                                        : weight;
-                            }
-                        }
-                        weight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), weight);
-                        rightWeight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), rightWeight);
-                        // Seed both columns from the same prescription. Edits later change
-                        // actuals only; target stays so hit/miss can still be judged.
-                        return LoggedSetEntity.builder()
-                                .loggedExerciseEntity(loggedExercise)
-                                .setNumber(plannedSet.getSetNumber())
-                                .actualReps(reps)
-                                .actualWeight(weight)
-                                .rightReps(rightReps)
-                                .rightWeight(rightWeight)
-                                .targetReps(reps)
-                                .targetWeight(weight)
-                                .actualDurationSeconds(SetTracking.tracksDuration(workoutExercise.getTracksDuration())
-                                        ? plannedSet.getTargetDurationSeconds()
-                                        : null)
-                                .actualDistance(SetTracking.tracksDistance(workoutExercise.getTracksDistance())
-                                        ? plannedSet.getTargetDistance()
-                                        : null)
-                                .loggedAt(null)
-                                .build();
-                    })
-                    .toList();
+            Integer prescriptionReps = suggestion.targetReps() != null
+                    ? suggestion.targetReps()
+                    : (workoutExercise.getMinReps() != null ? workoutExercise.getMinReps() : 6);
+            Float prescriptionWeight = null;
+            if (SetTracking.tracksWeight(workoutExercise.getTracksWeight()) && suggestion.targetWeight() != null) {
+                prescriptionWeight = loadingSchemeFactory.snapWeight(
+                        exercise, suggestion.targetWeight().floatValue());
+            }
+
+            List<LoggedSetEntity> lastSets = lastWorkout.setsFor(exercise.getId());
+            boolean replayMiss = shouldReplay(lastSets, workoutExercise.getMinReps(), workoutExercise.getMaxReps());
+            Map<Integer, LoggedSetEntity> lastByNumber = indexBySetNumber(lastSets);
+
+            List<LoggedSetEntity> loggedSets = new ArrayList<>();
+            for (PlannedSetEntity plannedSet : plannedSets) {
+                loggedSets.add(seedLoggedSet(
+                        loggedExercise,
+                        workoutExercise,
+                        plannedSet,
+                        prescriptionReps,
+                        prescriptionWeight,
+                        replayMiss ? lastByNumber.get(plannedSet.getSetNumber()) : null,
+                        replayMiss));
+            }
             loggedSetRepository.saveAll(loggedSets);
             loggedExercise.getLoggedSets().addAll(loggedSets);
             workoutLog.getLoggedExercises().add(loggedExercise);
@@ -417,5 +406,166 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
             return true;
         }
         return friendshipService.isFriend(userId, log.getCreatedByUserId());
+    }
+
+    /**
+     * Last finished log of this workout, only when it is still inside the
+     * replay window ({@code holdAfterDays}). Older logs are ignored so
+     * hold/deload/1RM can take over.
+     */
+    private LastWorkoutSnapshot lastCompletedWorkout(UUID userId, Long sourceWorkoutId) {
+        Optional<WorkoutLogEntity> found = workoutLogRepository
+                .findFirstByCreatedByUserIdAndSourceWorkoutIdAndCompletedAtIsNotNullOrderByCompletedAtDesc(
+                        userId, sourceWorkoutId);
+        if (found.isEmpty() || found.get().getCompletedAt() == null) {
+            return LastWorkoutSnapshot.none();
+        }
+        WorkoutLogEntity last = found.get();
+        int holdAfterDays = progressionConfig.holdAfterDays();
+        if (holdAfterDays <= 0) {
+            return LastWorkoutSnapshot.none();
+        }
+        long daysOff = ChronoUnit.DAYS.between(last.getCompletedAt().toLocalDate(), LocalDate.now());
+        if (daysOff > holdAfterDays) {
+            return LastWorkoutSnapshot.none();
+        }
+
+        Map<Long, List<LoggedSetEntity>> byExercise = new HashMap<>();
+        for (LoggedExerciseEntity loggedExercise :
+                loggedExerciseRepository.findByWorkoutLogEntity_IdOrderByOrderIndexAsc(last.getId())) {
+            byExercise.put(
+                    loggedExercise.getExerciseEntity().getId(),
+                    loggedSetRepository.findByLoggedExerciseEntity_IdOrderBySetNumberAsc(loggedExercise.getId()));
+        }
+        return new LastWorkoutSnapshot(byExercise);
+    }
+
+    /**
+     * Replay the last log's actuals when that exercise missed on the same
+     * ladder. Hits, range changes, and exercises no longer on the workout
+     * fall through to the suggestion instead.
+     */
+    private static boolean shouldReplay(List<LoggedSetEntity> lastSets, Integer minReps, Integer maxReps) {
+        if (lastSets == null || lastSets.isEmpty()) {
+            return false;
+        }
+        if (!sameLadder(lastSets, minReps, maxReps)) {
+            return false;
+        }
+        return !SessionBest.prescriptionHit(toHistoryRows(lastSets, 0L, null));
+    }
+
+    private static boolean sameLadder(List<LoggedSetEntity> lastSets, Integer minReps, Integer maxReps) {
+        int lo = minReps == null ? 6 : minReps;
+        int hi = maxReps == null ? 12 : maxReps;
+        if (lo > hi) {
+            int swap = lo;
+            lo = hi;
+            hi = swap;
+        }
+        for (LoggedSetEntity set : lastSets) {
+            Integer target = set.getTargetReps();
+            if (target != null && target > 0 && (target < lo || target > hi)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private LoggedSetEntity seedLoggedSet(LoggedExerciseEntity loggedExercise,
+                                          WorkoutExerciseEntity workoutExercise,
+                                          PlannedSetEntity plannedSet,
+                                          Integer prescriptionReps,
+                                          Float prescriptionWeight,
+                                          LoggedSetEntity prior,
+                                          boolean replayMiss) {
+        ExerciseEntity exercise = workoutExercise.getExerciseEntity();
+        boolean tracksWeight = SetTracking.tracksWeight(workoutExercise.getTracksWeight());
+        boolean unilateral = Laterality.isUnilateral(exercise.getLimbPattern());
+
+        Integer actualReps = prescriptionReps;
+        Float actualWeight = prescriptionWeight;
+        Integer rightReps = unilateral ? prescriptionReps : null;
+        Float rightWeight = unilateral && tracksWeight ? prescriptionWeight : null;
+
+        if (replayMiss) {
+            if (prior == null) {
+                actualReps = null;
+                actualWeight = null;
+                rightReps = null;
+                rightWeight = null;
+            } else {
+                actualReps = prior.getActualReps();
+                actualWeight = tracksWeight ? prior.getActualWeight() : null;
+                rightReps = unilateral ? prior.getRightReps() : null;
+                rightWeight = unilateral && tracksWeight ? prior.getRightWeight() : null;
+            }
+        }
+
+        actualWeight = loadingSchemeFactory.snapWeight(exercise, actualWeight);
+        rightWeight = loadingSchemeFactory.snapWeight(exercise, rightWeight);
+
+        return LoggedSetEntity.builder()
+                .loggedExerciseEntity(loggedExercise)
+                .setNumber(plannedSet.getSetNumber())
+                .actualReps(actualReps)
+                .actualWeight(actualWeight)
+                .rightReps(rightReps)
+                .rightWeight(rightWeight)
+                .targetReps(prescriptionReps)
+                .targetWeight(prescriptionWeight)
+                .actualDurationSeconds(SetTracking.tracksDuration(workoutExercise.getTracksDuration())
+                        ? plannedSet.getTargetDurationSeconds()
+                        : null)
+                .actualDistance(SetTracking.tracksDistance(workoutExercise.getTracksDistance())
+                        ? plannedSet.getTargetDistance()
+                        : null)
+                .loggedAt(null)
+                .build();
+    }
+
+    private static Map<Integer, LoggedSetEntity> indexBySetNumber(List<LoggedSetEntity> sets) {
+        if (sets == null || sets.isEmpty()) {
+            return Map.of();
+        }
+        Map<Integer, LoggedSetEntity> byNumber = new HashMap<>();
+        for (LoggedSetEntity set : sets) {
+            if (set.getSetNumber() != null) {
+                byNumber.put(set.getSetNumber(), set);
+            }
+        }
+        return byNumber;
+    }
+
+    private static List<SetHistoryRow> toHistoryRows(List<LoggedSetEntity> sets,
+                                                     Long workoutLogId,
+                                                     LocalDateTime completedAt) {
+        List<SetHistoryRow> rows = new ArrayList<>();
+        for (LoggedSetEntity set : sets) {
+            rows.add(new SetHistoryRow(
+                    workoutLogId,
+                    completedAt,
+                    set.getSetNumber(),
+                    set.getActualReps(),
+                    set.getActualWeight(),
+                    set.getRightReps(),
+                    set.getRightWeight(),
+                    set.getTargetReps(),
+                    set.getTargetWeight(),
+                    set.getFailed(),
+                    set.getRightFailed()));
+        }
+        return rows;
+    }
+
+    private record LastWorkoutSnapshot(Map<Long, List<LoggedSetEntity>> setsByExerciseId) {
+
+        static LastWorkoutSnapshot none() {
+            return new LastWorkoutSnapshot(Map.of());
+        }
+
+        List<LoggedSetEntity> setsFor(Long exerciseId) {
+            return setsByExerciseId.get(exerciseId);
+        }
     }
 }

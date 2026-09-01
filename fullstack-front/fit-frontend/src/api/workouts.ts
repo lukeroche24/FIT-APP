@@ -195,25 +195,15 @@ function isTempId(id: number): boolean {
 
 function toSetRequest(set: PlannedSetResponse): PlannedSetRequest {
   return {
-    targetReps: set.targetReps ?? undefined,
-    targetWeight: set.targetWeight ?? undefined,
-    rightReps: set.rightReps ?? undefined,
-    rightWeight: set.rightWeight ?? undefined,
     targetDurationSeconds: set.targetDurationSeconds ?? undefined,
     targetDistance: set.targetDistance ?? undefined,
-    restTimeSeconds: set.restTimeSeconds ?? undefined,
   };
 }
 
 function setChanged(original: PlannedSetResponse, draft: PlannedSetResponse): boolean {
   return (
-    original.targetReps !== draft.targetReps ||
-    original.targetWeight !== draft.targetWeight ||
-    original.rightReps !== draft.rightReps ||
-    original.rightWeight !== draft.rightWeight ||
     original.targetDurationSeconds !== draft.targetDurationSeconds ||
-    original.targetDistance !== draft.targetDistance ||
-    original.restTimeSeconds !== draft.restTimeSeconds
+    original.targetDistance !== draft.targetDistance
   );
 }
 
