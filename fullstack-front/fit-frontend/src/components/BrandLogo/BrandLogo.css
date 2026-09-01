@@ -1,0 +1,32 @@
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22em;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1cap;
+}
+
+.brand-logo-nav {
+  font-size: 1.85rem;
+  color: var(--on-dark);
+}
+
+.brand-logo-auth {
+  font-size: 2.8rem;
+  color: var(--text);
+}
+
+.brand-logo-mark {
+  display: block;
+  flex-shrink: 0;
+  width: auto;
+  height: 0.72em;
+  height: 1cap;
+}
+
+.brand-logo-word {
+  display: block;
+  line-height: 1cap;
+}

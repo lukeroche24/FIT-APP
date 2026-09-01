@@ -15,9 +15,8 @@
 }
 
 .app-navbar-brand {
-  font-weight: 800;
-  font-size: 1.2rem;
-  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
   color: var(--on-dark) !important;
   text-decoration: none;
   order: 1;

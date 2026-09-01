@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useActiveSession } from "../../hooks/ActiveSession";
+import BrandLogo from "../BrandLogo/BrandLogo";
 import Logout from "../Logout/Logout";
 import "./NavBar.css";
 
@@ -39,8 +40,8 @@ function NavBar() {
   return (
     <div className="app-navbar">
       <div className={`app-navbar-inner${menuOpen ? " is-open" : ""}`}>
-        <NavLink to="/" className="app-navbar-brand">
-          FIT
+        <NavLink to="/" className="app-navbar-brand" aria-label="FIT home">
+          <BrandLogo variant="nav" />
         </NavLink>
         <button
           type="button"

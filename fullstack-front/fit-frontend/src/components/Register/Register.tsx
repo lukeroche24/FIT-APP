@@ -5,6 +5,7 @@ import { register } from "../../api/auth";
 import { setToken } from "../../api/token";
 import { useActiveSession } from "../../hooks/ActiveSession";
 import { toErrorMessage } from "../../utils/errors";
+import BrandLogo from "../BrandLogo/BrandLogo";
 import ErrorBanner from "../ErrorBanner/ErrorBanner";
 import PageLayout from "../PageLayout/PageLayout";
 import "./Register.css";
@@ -42,7 +43,9 @@ function Register() {
 
   return (
     <PageLayout width="auth" withNav={false} className="auth-page">
-      <div className="auth-brand">FIT</div>
+      <div className="auth-brand">
+        <BrandLogo variant="auth" />
+      </div>
       <div className="auth-card">
         <h1>Register</h1>
         <ErrorBanner message={error} />
