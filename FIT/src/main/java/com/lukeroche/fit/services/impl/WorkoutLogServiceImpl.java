@@ -10,12 +10,13 @@ import com.lukeroche.fit.services.WorkoutLogService;
 import com.lukeroche.fit.services.progression.ProgressionService;
 import com.lukeroche.fit.services.progression.Recommendation;
 import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +27,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link WorkoutLogService}. Starting a session is the main
+ * integration with the progression engine: each planned set is seeded with the
+ * suggested load, stored as both actual (editable) and target (what was asked).
+ */
 @Service
 public class WorkoutLogServiceImpl implements WorkoutLogService {
 
@@ -67,7 +73,12 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     public WorkoutLogEntity startSession(Long sourceWorkoutId, UUID userId, StartSessionRequest request) {
         WorkoutEntity sourceWorkout = workoutRepository
                 .findByIdAndCreatedByUserId(sourceWorkoutId, userId)
-                .orElseThrow(() -> new RuntimeException("Workout does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Workout does not exist"));
+
+        if (workoutLogRepository.findFirstByCreatedByUserIdAndCompletedAtIsNullOrderByStartedAtDesc(userId)
+                .isPresent()) {
+            throw new IllegalStateException("You already have a session in progress");
+        }
 
         WorkoutLogEntity workoutLog = workoutLogRepository.save(WorkoutLogEntity.builder()
                 .createdByUserId(userId)
@@ -105,6 +116,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
 
             List<LoggedSetEntity> loggedSets = plannedSets.stream()
                     .map(plannedSet -> {
+                        // Suggestion wins when history exists; planned set is the blank-slate fallback.
                         Integer reps = suggestion.targetReps() != null
                                 ? suggestion.targetReps()
                                 : plannedSet.getTargetReps();
@@ -127,6 +139,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
                         }
                         weight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), weight);
                         rightWeight = loadingSchemeFactory.snapWeight(workoutExercise.getExerciseEntity(), rightWeight);
+                        // Seed both columns from the same prescription. Edits later change
+                        // actuals only; target stays so hit/miss can still be judged.
                         return LoggedSetEntity.builder()
                                 .loggedExerciseEntity(loggedExercise)
                                 .setNumber(plannedSet.getSetNumber())
@@ -200,7 +214,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
             Optional.ofNullable(workoutLogEntity.getName()).ifPresent(existingLog::setName);
             Optional.ofNullable(workoutLogEntity.getNotes()).ifPresent(existingLog::setNotes);
             return workoutLogRepository.save(existingLog);
-        }).orElseThrow(() -> new RuntimeException("Workout log does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Workout log does not exist"));
     }
 
     @Override
@@ -208,7 +222,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         return workoutLogRepository.findByIdAndCreatedByUserId(id, userId).map(existingLog -> {
             existingLog.setCompletedAt(LocalDateTime.now());
             return workoutLogRepository.save(existingLog);
-        }).orElseThrow(() -> new RuntimeException("Workout log does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Workout log does not exist"));
     }
 
     @Override
@@ -218,9 +232,11 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
 
     @Override
     public LoggedExerciseEntity addLoggedExercise(Long workoutLogId, UUID userId, AddLoggedExerciseRequest request) {
-        WorkoutLogEntity workoutLog = workoutLogRepository.findByIdAndCreatedByUserId(workoutLogId, userId).orElseThrow();
+        WorkoutLogEntity workoutLog = workoutLogRepository.findByIdAndCreatedByUserId(workoutLogId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Workout log does not exist"));
 
-        ExerciseEntity exercise = exerciseRepository.findByIdAndCreatedByUserId(request.getExerciseId(), userId).orElseThrow();
+        ExerciseEntity exercise = exerciseRepository.findByIdAndCreatedByUserId(request.getExerciseId(), userId)
+                .orElseThrow(() -> new EntityNotFoundException("Exercise does not exist"));
 
         LoggedExerciseEntity loggedExercise = LoggedExerciseEntity.builder()
                 .workoutLogEntity(workoutLog)
@@ -258,7 +274,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     @Override
     @Transactional
     public LoggedSetEntity addLoggedSet(Long loggedExerciseId, LoggedSetRequest request) {
-        LoggedExerciseEntity loggedExercise = loggedExerciseRepository.findById(loggedExerciseId).orElseThrow();
+        LoggedExerciseEntity loggedExercise = loggedExerciseRepository.findById(loggedExerciseId)
+                .orElseThrow(() -> new EntityNotFoundException("Logged exercise does not exist"));
 
         Integer reps = request != null ? request.getActualReps() : null;
         Float weight = request != null ? request.getActualWeight() : null;
@@ -269,6 +286,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         String notes = request != null ? request.getNotes() : null;
 
         if (reps == null || (SetTracking.tracksWeight(loggedExercise.getTracksWeight()) && weight == null)) {
+            // Extra sets have no planned row; fill blanks from the same suggestion as startSession.
             Recommendation suggestion = progressionService.forExercise(
                     loggedExercise.getWorkoutLogEntity().getCreatedByUserId(),
                     loggedExercise.getExerciseEntity());
@@ -317,6 +335,8 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     @Transactional
     public LoggedSetEntity updateLoggedSet(Long setId, LoggedSetRequest request) {
         return loggedSetRepository.findById(setId).map(existingSet -> {
+            // Intentionally does not write targetReps/targetWeight. Syncing them to
+            // actuals would make every edited set look like a hit.
             ExerciseEntity exercise = existingSet.getLoggedExerciseEntity().getExerciseEntity();
             Optional.ofNullable(request.getActualReps()).ifPresent(existingSet::setActualReps);
             Optional.ofNullable(request.getActualWeight())
@@ -331,7 +351,7 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
             Optional.ofNullable(request.getRightFailed()).ifPresent(existingSet::setRightFailed);
             existingSet.setLoggedAt(LocalDateTime.now());
             return loggedSetRepository.save(existingSet);
-        }).orElseThrow(() -> new RuntimeException("Logged set does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Logged set does not exist"));
     }
 
     @Override

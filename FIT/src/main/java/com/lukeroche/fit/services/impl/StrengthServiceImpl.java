@@ -21,6 +21,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Computes estimated 1RM, tested 1RM, and heaviest successful set from
+ * {@link com.lukeroche.fit.repositories.LoggedSetRepository#findCompletedSetHistory}.
+ * Estimated 1RM is last {@link StrengthConfig#estimatedOneRmDays()} days;
+ * tested 1RM (a true single) and heaviest are all-time. Failed sides are
+ * skipped via {@link #successfulSide}.
+ */
 @Service
 @RequiredArgsConstructor
 public class StrengthServiceImpl implements StrengthService {
@@ -71,6 +78,7 @@ public class StrengthServiceImpl implements StrengthService {
                 }
             }
 
+            // True singles only; sub-max sets are estimated above, not counted here.
             if (side.reps() == 1 && (testedOneRm == null || side.weight() > testedOneRm)) {
                 testedOneRm = side.weight();
             }
@@ -107,6 +115,7 @@ public class StrengthServiceImpl implements StrengthService {
         return completedAt != null && !completedAt.toLocalDate().isBefore(estimateFrom);
     }
 
+    /** Successful side only; a failed or empty side is treated as missing. */
     private static WeakerSide.Side successfulSide(SetHistoryRow set) {
         boolean leftOk = set.actualReps() != null && set.actualReps() > 0
                 && set.actualWeight() != null && set.actualWeight() > 0
