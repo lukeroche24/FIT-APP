@@ -10,11 +10,16 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Maps domain exceptions to JSON error bodies. {@link EntityNotFoundException}
+ * is also used as a privacy 404 when a resource exists but is not visible.
+ */
 @RestController
 @ControllerAdvice
 @Slf4j
 public class ErrorController {
 
+    /** Catch-all; message is generic so internals are not leaked. */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleException(Exception ex) {
         log.error("Caught exception", ex);
@@ -34,6 +39,7 @@ public class ErrorController {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    /** 409 for conflicts such as a taken username or an existing friendship. */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalStateException(IllegalStateException ex) {
         ApiErrorResponse error = ApiErrorResponse.builder()

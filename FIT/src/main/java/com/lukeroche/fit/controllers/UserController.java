@@ -32,10 +32,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Current user, friend-visible profiles, and search. Strangers looking up
+ * a profile or plan get 404, same as a missing user.
+ */
 @RestController
 public class UserController {
-
-    private static final long TOKEN_EXPIRES_IN = 86400L;
 
     private final UserService userService;
     private final FriendshipService friendshipService;
@@ -64,6 +66,7 @@ public class UserController {
         return userService.getMe(userId);
     }
 
+    /** If email changes, a new JWT is issued because the token subject is email. */
     @PatchMapping(path = "/users/me")
     public UpdateProfileResponse updateMe(@RequestBody UpdateProfileRequest body, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
@@ -75,7 +78,7 @@ public class UserController {
         if (!previousEmail.equals(profile.getEmail())) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(profile.getEmail());
             token = authenticationService.generateToken(userDetails);
-            expiresIn = TOKEN_EXPIRES_IN;
+            expiresIn = authenticationService.tokenExpirySeconds();
         }
 
         return UpdateProfileResponse.builder()
@@ -85,12 +88,14 @@ public class UserController {
                 .build();
     }
 
+    /** Self or a friend; anyone else is indistinguishable from not found. */
     @GetMapping(path = "/users/{id}/profile")
     public UserProfileResponse getProfile(@PathVariable("id") UUID id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
         return userService.getVisibleProfile(userId, id);
     }
 
+    /** Active plan of {@code id}; same visibility as {@link #getProfile}. */
     @GetMapping(path = "/users/{id}/plan")
     public ResponseEntity<PlanResponse> getVisibleActivePlan(@PathVariable("id") UUID id, HttpServletRequest request) {
         UUID viewerId = (UUID) request.getAttribute("userId");

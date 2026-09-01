@@ -1,5 +1,6 @@
 package com.lukeroche.fit.controllers;
 
+import com.lukeroche.fit.NotFound;
 import com.lukeroche.fit.domain.dto.friend.FriendRequestResponse;
 import com.lukeroche.fit.domain.dto.friend.FriendResponse;
 import com.lukeroche.fit.domain.dto.friend.SendFriendRequestRequest;
@@ -16,6 +17,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/**
+ * Friend requests and the friends list. Accept is recipient-only; cancel
+ * or decline is either party.
+ */
 @RestController
 public class FriendController {
 
@@ -63,19 +68,16 @@ public class FriendController {
     @PostMapping(path = "/friends/requests/{id}/accept")
     public ResponseEntity<FriendRequestResponse> accept(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!friendshipService.isRecipient(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(friendshipService.isRecipient(id, userId));
         FriendshipEntity accepted = friendshipService.acceptRequest(id);
         return new ResponseEntity<>(toResponse(accepted, accepted.getRequesterId()), HttpStatus.OK);
     }
 
+    /** Cancels an outgoing request or declines an incoming one. */
     @DeleteMapping(path = "/friends/requests/{id}")
     public ResponseEntity<Void> removeRequest(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!friendshipService.isParty(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(friendshipService.isParty(id, userId));
         friendshipService.removeRequest(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -89,9 +91,7 @@ public class FriendController {
     @DeleteMapping(path = "/friends/{friendUserId}")
     public ResponseEntity<Void> unfriend(@PathVariable("friendUserId") UUID friendUserId, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!friendshipService.isFriend(userId, friendUserId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(friendshipService.isFriend(userId, friendUserId));
         friendshipService.unfriend(userId, friendUserId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

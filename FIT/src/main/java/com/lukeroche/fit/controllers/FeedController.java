@@ -5,6 +5,7 @@ import com.lukeroche.fit.domain.entities.User;
 import com.lukeroche.fit.domain.entities.WorkoutLogEntity;
 import com.lukeroche.fit.services.UserService;
 import com.lukeroche.fit.services.WorkoutLogService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Completed sessions from friends, newest first. In-progress logs never appear.
+ */
 @RestController
 public class FeedController {
 
@@ -33,8 +37,13 @@ public class FeedController {
         Page<WorkoutLogEntity> logs = workoutLogService.getFriendsFeed(userId, pageable);
         Map<Long, List<String>> exerciseNames = workoutLogService.exerciseNamesByLogId(
                 logs.getContent().stream().map(WorkoutLogEntity::getId).toList());
+        Map<UUID, User> friends = userService.findByIds(
+                logs.getContent().stream().map(WorkoutLogEntity::getCreatedByUserId).toList());
         return logs.map(log -> {
-            User friend = userService.getUserById(log.getCreatedByUserId());
+            User friend = friends.get(log.getCreatedByUserId());
+            if (friend == null) {
+                throw new EntityNotFoundException("User not found");
+            }
             return FeedItemResponse.builder()
                     .workoutLogId(log.getId())
                     .workoutName(log.getName())

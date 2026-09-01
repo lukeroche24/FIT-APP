@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Estimated 1RM, tested 1RM, and heaviest lift for a user. Self or a friend;
+ * anyone else gets 404 from {@link StrengthService}.
+ */
 @RestController
 public class StrengthController {
 

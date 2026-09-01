@@ -1,5 +1,6 @@
 package com.lukeroche.fit.controllers;
 
+import com.lukeroche.fit.NotFound;
 import com.lukeroche.fit.domain.dto.plan.*;
 import com.lukeroche.fit.domain.entities.PlanDayEntity;
 import com.lukeroche.fit.domain.entities.PlanEntity;
@@ -7,6 +8,7 @@ import com.lukeroche.fit.mappers.PlanDayMapper;
 import com.lukeroche.fit.mappers.PlanMapper;
 import com.lukeroche.fit.services.PlanService;
 import com.lukeroche.fit.services.WorkoutService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +17,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * HTTP for weekly plans. At most one plan is active; a new plan stays inactive
+ * until {@link #activatePlan}. Unowned ids return 404.
+ */
 @RestController
 public class PlanController {
 
@@ -36,6 +41,7 @@ public class PlanController {
         this.planDayMapper = planDayMapper;
     }
 
+    /** Always created inactive so it cannot displace the current plan by accident. */
     @PostMapping(path = "/plans")
     public ResponseEntity<PlanResponse> createPlan(@RequestBody PlanRequest planRequest, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
@@ -46,6 +52,7 @@ public class PlanController {
         return new ResponseEntity<>(planMapper.toResponse(saved), HttpStatus.CREATED);
     }
 
+    /** {@code excludeActive} is for the switch-plan picker so the current plan is omitted. */
     @GetMapping(path = "/plans")
     public Page<PlanResponse> listPlans(
             @RequestParam(required = false) String query,
@@ -60,11 +67,9 @@ public class PlanController {
     @GetMapping(path = "/plans/{id}")
     public ResponseEntity<PlanResponse> getPlan(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        Optional<PlanEntity> foundPlan = planService.findOneForUser(id, userId);
-        return foundPlan.map(planEntity -> {
-            PlanResponse planResponse = planMapper.toResponse(planEntity);
-            return new ResponseEntity<>(planResponse, HttpStatus.OK);
-        }).orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+        PlanEntity plan = planService.findOneForUser(id, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Not found"));
+        return new ResponseEntity<>(planMapper.toResponse(plan), HttpStatus.OK);
     }
 
     @PatchMapping(path = "/plans/{id}")
@@ -73,9 +78,7 @@ public class PlanController {
             @RequestBody PlanRequest planRequest,
             HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
         PlanEntity planEntity = planMapper.fromRequest(planRequest);
         PlanEntity updated = planService.partialUpdate(id, userId, planEntity);
         return new ResponseEntity<>(planMapper.toResponse(updated), HttpStatus.OK);
@@ -84,9 +87,7 @@ public class PlanController {
     @DeleteMapping(path = "/plans/{id}")
     public ResponseEntity<Void> deletePlan(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
         planService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -98,12 +99,8 @@ public class PlanController {
             @RequestBody SetPlanDayRequest setPlanDayRequest,
             HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-        if (!workoutService.isOwnedByUser(setPlanDayRequest.getWorkoutId(), userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
+        NotFound.unless(workoutService.isOwnedByUser(setPlanDayRequest.getWorkoutId(), userId));
         PlanDayEntity saved = planService.setPlanDay(id, userId, dayOfWeek, setPlanDayRequest.getWorkoutId());
         return new ResponseEntity<>(planDayMapper.toResponse(saved), HttpStatus.OK);
     }
@@ -114,19 +111,16 @@ public class PlanController {
             @PathVariable("dayOfWeek") Integer dayOfWeek,
             HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
         planService.removePlanDay(id, dayOfWeek);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    /** Turns off any other active plan and sets {@code startDate} to today. */
     @PostMapping(path = "/plans/{id}/activate")
     public ResponseEntity<PlanResponse> activatePlan(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
         PlanEntity activated = planService.activate(id, userId);
         return new ResponseEntity<>(planMapper.toResponse(activated), HttpStatus.OK);
     }
@@ -134,9 +128,7 @@ public class PlanController {
     @PostMapping(path = "/plans/{id}/deactivate")
     public ResponseEntity<PlanResponse> deactivatePlan(@PathVariable("id") Long id, HttpServletRequest request) {
         UUID userId = (UUID) request.getAttribute("userId");
-        if (!planService.isOwnedByUser(id, userId)) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+        NotFound.unless(planService.isOwnedByUser(id, userId));
         PlanEntity deactivated = planService.deactivate(id, userId);
         return new ResponseEntity<>(planMapper.toResponse(deactivated), HttpStatus.OK);
     }
@@ -149,6 +141,7 @@ public class PlanController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    /** Projects the active plan's days forward from today. */
     @GetMapping(path = "/plans/active/upcoming")
     public ResponseEntity<java.util.List<UpcomingWorkoutResponse>> getUpcoming(
             @RequestParam(name = "weeks", defaultValue = "4") int weeks,

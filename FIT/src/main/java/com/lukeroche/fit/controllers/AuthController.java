@@ -13,6 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Public login and register. Both return a JWT; register authenticates
+ * immediately so the client does not need a second request.
+ */
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
@@ -29,11 +33,12 @@ public class AuthController {
         String tokenValue = authenticationService.generateToken(userDetails);
         AuthResponse authResponse = AuthResponse.builder()
                 .token(tokenValue)
-                .expiresIn(86400)
+                .expiresIn(authenticationService.tokenExpirySeconds())
                 .build();
         return ResponseEntity.ok(authResponse);
     }
 
+    /** Creates the account, then issues a token as {@link #login} would. */
     @PostMapping(path = "/auth/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest registerRequest) {
         userService.createUser(
@@ -49,7 +54,7 @@ public class AuthController {
         String tokenValue = authenticationService.generateToken(userDetails);
         AuthResponse authResponse = AuthResponse.builder()
                 .token(tokenValue)
-                .expiresIn(86400)
+                .expiresIn(authenticationService.tokenExpirySeconds())
                 .build();
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
