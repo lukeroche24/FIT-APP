@@ -12,6 +12,7 @@ import com.lukeroche.fit.repositories.PlanRepository;
 import com.lukeroche.fit.repositories.WorkoutLogRepository;
 import com.lukeroche.fit.repositories.WorkoutRepository;
 import com.lukeroche.fit.services.PlanService;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link PlanService}. Upcoming status is derived from
+ * completed logs keyed by calendar date and source workout, not from
+ * mutating plan days.
+ */
 @Service
 public class PlanServiceImpl implements PlanService {
 
@@ -83,7 +89,7 @@ public class PlanServiceImpl implements PlanService {
             Optional.ofNullable(planEntity.getName()).ifPresent(existingPlan::setName);
             Optional.ofNullable(planEntity.getWeeks()).ifPresent(existingPlan::setWeeks);
             return planRepository.save(existingPlan);
-        }).orElseThrow(() -> new RuntimeException("Plan does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Plan does not exist"));
     }
 
     @Override
@@ -93,8 +99,10 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public PlanDayEntity setPlanDay(Long planId, UUID userId, Integer dayOfWeek, Long workoutId) {
-        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId).orElseThrow();
-        WorkoutEntity workout = workoutRepository.findByIdAndCreatedByUserId(workoutId, userId).orElseThrow();
+        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Plan does not exist"));
+        WorkoutEntity workout = workoutRepository.findByIdAndCreatedByUserId(workoutId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Workout does not exist"));
 
         PlanDayEntity planDay = planDayRepository.findByPlanEntity_IdAndDayOfWeek(planId, dayOfWeek)
                 .orElseGet(() -> PlanDayEntity.builder()
@@ -114,6 +122,7 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public PlanEntity activate(Long planId, UUID userId) {
+        // Only one active plan per user; the previous one is turned off first.
         planRepository.findByCreatedByUserIdAndActiveTrue(userId)
                 .filter(existingActive -> !existingActive.getId().equals(planId))
                 .ifPresent(existingActive -> {
@@ -121,7 +130,8 @@ public class PlanServiceImpl implements PlanService {
                     planRepository.save(existingActive);
                 });
 
-        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId).orElseThrow();
+        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Plan does not exist"));
         plan.setActive(true);
         plan.setStartDate(LocalDate.now());
         return planRepository.save(plan);
@@ -129,7 +139,8 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public PlanEntity deactivate(Long planId, UUID userId) {
-        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId).orElseThrow();
+        PlanEntity plan = planRepository.findByIdAndCreatedByUserId(planId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Plan does not exist"));
         plan.setActive(false);
         return planRepository.save(plan);
     }
@@ -165,6 +176,7 @@ public class PlanServiceImpl implements PlanService {
             PlanDayEntity planDay = dayMap.get(dayOfWeek);
             WorkoutEntity workout = planDay != null ? planDay.getWorkoutEntity() : null;
             Long workoutLogId = null;
+            // REST days stay in the calendar so the week layout matches the plan.
             PlanOccurrenceStatus status = PlanOccurrenceStatus.REST;
 
             if (workout != null) {
@@ -215,6 +227,7 @@ public class PlanServiceImpl implements PlanService {
                 continue;
             }
             String key = log.getCompletedAt().toLocalDate() + ":" + log.getSourceWorkoutId();
+            // First completed log for that date and workout wins if they logged twice.
             completed.putIfAbsent(key, log.getId());
         }
         return completed;

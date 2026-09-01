@@ -19,6 +19,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link FriendshipService}. Lookups try both
+ * requester/recipient directions because the stored order is who sent first.
+ */
 @Service
 public class FriendshipServiceImpl implements FriendshipService {
 
@@ -74,7 +78,8 @@ public class FriendshipServiceImpl implements FriendshipService {
 
     @Override
     public FriendshipEntity acceptRequest(Long requestId) {
-        FriendshipEntity friendship = friendshipRepository.findById(requestId).orElseThrow();
+        FriendshipEntity friendship = friendshipRepository.findById(requestId)
+                .orElseThrow(() -> new EntityNotFoundException("Friend request does not exist"));
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         friendship.setAcceptedAt(LocalDateTime.now());
         return friendshipRepository.save(friendship);
@@ -114,10 +119,13 @@ public class FriendshipServiceImpl implements FriendshipService {
     public Page<FriendResponse> listFriends(UUID userId, Pageable pageable) {
         List<UUID> friendIds = listFriendUserIds(userId);
 
+        // Friendship can be stored in either direction, so ids are gathered then paged in memory.
         List<FriendResponse> friends = friendIds.stream()
                 .map(friendId -> {
-                    User friend = userRepository.findById(friendId).orElseThrow();
-                    FriendshipEntity friendship = findRelationship(userId, friendId).orElseThrow();
+                    User friend = userRepository.findById(friendId)
+                            .orElseThrow(() -> new EntityNotFoundException("User not found"));
+                    FriendshipEntity friendship = findRelationship(userId, friendId)
+                            .orElseThrow(() -> new EntityNotFoundException("Friendship not found"));
                     return FriendResponse.builder()
                             .userId(friend.getId())
                             .username(friend.getUsername())
@@ -147,6 +155,7 @@ public class FriendshipServiceImpl implements FriendshipService {
     }
 
     private static LocalDateTime friendsSinceOf(FriendshipEntity friendship) {
+        // Older rows may lack acceptedAt; createdAt is the request time in that case.
         return friendship.getAcceptedAt() != null ? friendship.getAcceptedAt() : friendship.getCreatedAt();
     }
 

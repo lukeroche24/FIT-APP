@@ -19,8 +19,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link UserService}. Profile stats are counts of owned
+ * workouts and finished sessions plus the active plan name.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -37,6 +44,18 @@ public class UserServiceImpl implements UserService {
         return userRepository
                 .findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + id));
+    }
+
+    @Override
+    public Map<UUID, User> findByIds(Collection<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, User> byId = new HashMap<>();
+        for (User user : userRepository.findAllById(ids)) {
+            byId.put(user.getId(), user);
+        }
+        return byId;
     }
 
     @Override
@@ -115,6 +134,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileResponse getVisibleProfile(UUID viewerId, UUID targetId) {
         if (!viewerId.equals(targetId) && !friendshipService.isFriend(viewerId, targetId)) {
+            // Same not-found as a missing user so friendship is not leaked.
             throw new EntityNotFoundException("User not found");
         }
 

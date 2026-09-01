@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Weekly plans. At most one plan is {@code active}; activating another
+ * turns the current one off and sets {@code startDate} to today.
+ */
 public interface PlanService {
 
     PlanEntity save(PlanEntity planEntity);
@@ -25,17 +29,31 @@ public interface PlanService {
 
     void delete(Long id);
 
+    /** Assigns a workout to a weekday slot, replacing any workout already there. */
     PlanDayEntity setPlanDay(Long planId, UUID userId, Integer dayOfWeek, Long workoutId);
 
     void removePlanDay(Long planId, Integer dayOfWeek);
 
+    /**
+     * Makes this the only active plan. The previous active plan is turned off
+     * and this plan's {@code startDate} is set to today.
+     */
     PlanEntity activate(Long planId, UUID userId);
 
     PlanEntity deactivate(Long planId, UUID userId);
 
     Optional<PlanEntity> getActiveForUser(UUID userId);
 
+    /**
+     * One entry per calendar day from {@code startDate} through the plan length.
+     * Days without a workout are {@code REST}. A completed log for that date
+     * and source workout is {@code COMPLETED}; past unset days are {@code MISSED}.
+     */
     List<UpcomingWorkoutResponse> getUpcoming(UUID userId, LocalDate fromDate, int weeksAhead);
 
+    /**
+     * First scheduled workout on or after {@code fromDate} that is not yet
+     * completed. Empty when nothing is due.
+     */
     Optional<UpcomingWorkoutResponse> getNext(UUID userId, LocalDate fromDate);
 }

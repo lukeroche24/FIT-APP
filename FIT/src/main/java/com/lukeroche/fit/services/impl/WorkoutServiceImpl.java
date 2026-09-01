@@ -8,10 +8,11 @@ import com.lukeroche.fit.repositories.*;
 import com.lukeroche.fit.services.WorkoutService;
 import com.lukeroche.fit.services.progression.LoadingTypeSuggestion;
 import com.lukeroche.fit.services.progression.LoadingSchemeFactory;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link WorkoutService}. Planned weights are snapped to the
+ * exercise load step. Copy-to-library is a deep copy of log rows into a new
+ * template owned by the copier.
+ */
 @Service
 public class WorkoutServiceImpl implements WorkoutService {
 
@@ -80,9 +86,8 @@ public class WorkoutServiceImpl implements WorkoutService {
         return workoutRepository.findByIdAndCreatedByUserId(id, userId).map(existingWorkout -> {
             Optional.ofNullable(workoutEntity.getName()).ifPresent((existingWorkout::setName));
             Optional.ofNullable(workoutEntity.getDescription()).ifPresent((existingWorkout::setDescription));
-            Optional.ofNullable(workoutEntity.getVisibility()).ifPresent((existingWorkout::setVisibility));
             return workoutRepository.save(existingWorkout);
-        }).orElseThrow(() -> new RuntimeException("Workout does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Workout does not exist"));
     }
 
     @Override
@@ -94,9 +99,11 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     public WorkoutExerciseEntity addWorkoutExercise(Long workoutId, UUID userId, AddWorkoutExerciseRequest request){
 
-        WorkoutEntity workout = workoutRepository.findByIdAndCreatedByUserId(workoutId, userId).orElseThrow();
+        WorkoutEntity workout = workoutRepository.findByIdAndCreatedByUserId(workoutId, userId)
+                .orElseThrow(() -> new EntityNotFoundException("Workout does not exist"));
 
-        ExerciseEntity exercise = exerciseRepository.findByIdAndCreatedByUserId(request.getExerciseId(), userId).orElseThrow();
+        ExerciseEntity exercise = exerciseRepository.findByIdAndCreatedByUserId(request.getExerciseId(), userId)
+                .orElseThrow(() -> new EntityNotFoundException("Exercise does not exist"));
 
         int minReps = request.getMinReps() == null ? 6 : request.getMinReps();
         int maxReps = request.getMaxReps() == null ? 12 : request.getMaxReps();
@@ -127,14 +134,14 @@ public class WorkoutServiceImpl implements WorkoutService {
 
     @Override
     @Transactional
-    public WorkoutExerciseEntity reorderWorkoutExercise(Long workoutId, Long workoutExerciseID, UpdateWorkoutExerciseRequest workoutExerciseRequest) {
+    public WorkoutExerciseEntity updateWorkoutExercise(Long workoutId, Long workoutExerciseId, UpdateWorkoutExerciseRequest workoutExerciseRequest) {
 
         List<WorkoutExerciseEntity> workoutExercises = workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(workoutId);
 
         WorkoutExerciseEntity reorderedExercise = workoutExercises.stream()
-                .filter(workoutExerciseEntity -> workoutExerciseEntity.getId().equals(workoutExerciseID))
+                .filter(workoutExerciseEntity -> workoutExerciseEntity.getId().equals(workoutExerciseId))
                 .findFirst()
-                .orElseThrow();
+                .orElseThrow(() -> new EntityNotFoundException("Workout exercise does not exist"));
 
         Optional.ofNullable(workoutExerciseRequest.getMinReps()).ifPresent(reorderedExercise::setMinReps);
         Optional.ofNullable(workoutExerciseRequest.getMaxReps()).ifPresent(reorderedExercise::setMaxReps);
@@ -148,6 +155,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             return workoutExerciseRepository.save(reorderedExercise);
         }
 
+        // Clients send 1-based order; the list is 0-based after removing the row.
         int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex()) - 1;
 
 
@@ -193,7 +201,8 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Override
     @Transactional
     public PlannedSetEntity addPlannedSet(Long workoutExerciseId, PlannedSetRequest request) {
-        WorkoutExerciseEntity workoutExercise = workoutExerciseRepository.findById(workoutExerciseId).orElseThrow();
+        WorkoutExerciseEntity workoutExercise = workoutExerciseRepository.findById(workoutExerciseId)
+                .orElseThrow(() -> new EntityNotFoundException("Workout exercise does not exist"));
 
         PlannedSetEntity plannedSet = PlannedSetEntity.builder()
                 .workoutExerciseEntity(workoutExercise)
@@ -225,7 +234,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             Optional.ofNullable(request.getTargetDistance()).ifPresent(existingSet::setTargetDistance);
             Optional.ofNullable(request.getRestTimeSeconds()).ifPresent(existingSet::setRestTimeSeconds);
             return plannedSetRepository.save(existingSet);
-        }).orElseThrow(() -> new RuntimeException("Planned set does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Planned set does not exist"));
     }
 
     @Override
@@ -252,18 +261,18 @@ public class WorkoutServiceImpl implements WorkoutService {
     @Transactional
     public WorkoutEntity copyWorkoutLogToLibrary(Long workoutLogId, UUID copyingUserId) {
         WorkoutLogEntity sourceLog = workoutLogRepository.findById(workoutLogId)
-                .orElseThrow(() -> new RuntimeException("Workout log does not exist"));
+                .orElseThrow(() -> new EntityNotFoundException("Workout log does not exist"));
 
         WorkoutEntity newWorkout = workoutRepository.save(WorkoutEntity.builder()
                 .createdByUserId(copyingUserId)
                 .name(uniqueWorkoutName(sourceLog.getName(), copyingUserId))
-                .description("Copied from a friend's session")
-                .visibility(false)
+                .description("Copied from " + sourceLog.getName())
                 .build());
 
         List<LoggedExerciseEntity> sourceLoggedExercises =
                 loggedExerciseRepository.findByWorkoutLogEntity_IdOrderByOrderIndexAsc(workoutLogId);
 
+        Map<Long, WorkoutExerciseEntity> sourceRangesByExerciseId = sourceRanges(sourceLog.getSourceWorkoutId());
         Map<Long, ExerciseEntity> exercisesBySourceId = new HashMap<>();
 
         for (LoggedExerciseEntity loggedExercise : sourceLoggedExercises) {
@@ -272,12 +281,18 @@ public class WorkoutServiceImpl implements WorkoutService {
                     sourceExercise.getId(),
                     unused -> resolveLibraryExercise(sourceExercise, copyingUserId));
 
+            List<LoggedSetEntity> sourceSets =
+                    loggedSetRepository.findByLoggedExerciseEntity_IdOrderBySetNumberAsc(loggedExercise.getId());
+            int[] range = resolveRepRange(
+                    sourceRangesByExerciseId.get(sourceExercise.getId()),
+                    sourceSets);
+
             WorkoutExerciseEntity newWorkoutExercise = workoutExerciseRepository.save(WorkoutExerciseEntity.builder()
                     .workoutEntity(newWorkout)
                     .exerciseEntity(libraryExercise)
                     .orderIndex(loggedExercise.getOrderIndex())
-                    .minReps(6)
-                    .maxReps(12)
+                    .minReps(range[0])
+                    .maxReps(range[1])
                     .tracksWeight(SetTracking.resolveWeight(loggedExercise.getTracksWeight(), sourceExercise.getTracksWeight()))
                     .tracksDuration(SetTracking.resolveDuration(loggedExercise.getTracksDuration(), sourceExercise.getTracksDuration()))
                     .tracksDistance(SetTracking.resolveDistance(loggedExercise.getTracksDistance(), sourceExercise.getTracksDistance()))
@@ -288,8 +303,7 @@ public class WorkoutServiceImpl implements WorkoutService {
                             sourceExercise.getLoadingType()))
                     .build());
 
-            List<PlannedSetEntity> newPlannedSets = loggedSetRepository
-                    .findByLoggedExerciseEntity_IdOrderBySetNumberAsc(loggedExercise.getId()).stream()
+            List<PlannedSetEntity> newPlannedSets = sourceSets.stream()
                     .map(loggedSet -> PlannedSetEntity.builder()
                             .workoutExerciseEntity(newWorkoutExercise)
                             .setNumber(loggedSet.getSetNumber())
@@ -345,5 +359,41 @@ public class WorkoutServiceImpl implements WorkoutService {
             suffix++;
         } while (workoutRepository.existsByCreatedByUserIdAndNameIgnoreCase(copyingUserId, candidate));
         return candidate;
+    }
+
+    private Map<Long, WorkoutExerciseEntity> sourceRanges(Long sourceWorkoutId) {
+        if (sourceWorkoutId == null) {
+            return Map.of();
+        }
+        Map<Long, WorkoutExerciseEntity> byExerciseId = new HashMap<>();
+        for (WorkoutExerciseEntity workoutExercise :
+                workoutExerciseRepository.findByWorkoutEntity_IdOrderByOrderIndexAsc(sourceWorkoutId)) {
+            byExerciseId.putIfAbsent(workoutExercise.getExerciseEntity().getId(), workoutExercise);
+        }
+        return byExerciseId;
+    }
+
+    private static int[] resolveRepRange(WorkoutExerciseEntity sourceExercise, List<LoggedSetEntity> sets) {
+        // Prefer the source template's min/max so a copy keeps the programmed
+        // range even when the session went outside it.
+        if (sourceExercise != null && sourceExercise.getMinReps() != null && sourceExercise.getMaxReps() != null) {
+            int min = sourceExercise.getMinReps();
+            int max = sourceExercise.getMaxReps();
+            return min <= max ? new int[]{min, max} : new int[]{max, min};
+        }
+        Integer min = null;
+        Integer max = null;
+        for (LoggedSetEntity set : sets) {
+            Integer reps = set.getTargetReps() != null ? set.getTargetReps() : set.getActualReps();
+            if (reps == null || reps <= 0) {
+                continue;
+            }
+            min = min == null ? reps : Math.min(min, reps);
+            max = max == null ? reps : Math.max(max, reps);
+        }
+        if (min == null) {
+            return new int[]{6, 12};
+        }
+        return new int[]{min, max};
     }
 }

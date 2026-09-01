@@ -18,6 +18,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * HS256 JWTs using {@code jwt.secret} and {@code jwt.expiry-ms}.
+ * {@link #validateToken} only checks the signature and expiry; it does not
+ * re-check the password.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -28,7 +33,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    private final Long jwtExpiryMs = 86400000L;
+    @Value("${jwt.expiry-ms:86400000}")
+    private long jwtExpiryMs;
 
     @Override
     public UserDetails authenticate(String email, String password) {
@@ -54,6 +60,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public UserDetails validateToken(String token) {
         String username = extractUsername(token);
         return userDetailsService.loadUserByUsername(username);
+    }
+
+    @Override
+    public long tokenExpirySeconds() {
+        return jwtExpiryMs / 1000;
     }
 
     private String extractUsername(String token) {

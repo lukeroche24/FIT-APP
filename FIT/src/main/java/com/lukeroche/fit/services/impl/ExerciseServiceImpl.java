@@ -9,6 +9,7 @@ import com.lukeroche.fit.repositories.LoggedExerciseRepository;
 import com.lukeroche.fit.repositories.WorkoutExerciseRepository;
 import com.lukeroche.fit.services.ExerciseService;
 import com.lukeroche.fit.services.progression.LoadingTypeSuggestion;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,10 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Persistence for {@link ExerciseService}. Loading-type defaults come from
+ * {@link LoadingTypeSuggestion}; dumbbells default to independent loads.
+ */
 @Service
 public class ExerciseServiceImpl implements ExerciseService {
 
@@ -79,7 +84,7 @@ public class ExerciseServiceImpl implements ExerciseService {
             loadingTypeSuggestion.applyDefaults(existingExercise);
             applyLateralityDefaults(existingExercise);
             return exerciseRepository.save(existingExercise);
-        }).orElseThrow(() -> new RuntimeException("Exercise does not exist"));
+        }).orElseThrow(() -> new EntityNotFoundException("Exercise does not exist"));
     }
 
     @Override
@@ -109,6 +114,7 @@ public class ExerciseServiceImpl implements ExerciseService {
             exerciseEntity.setLimbPattern(LimbPattern.BILATERAL);
         }
         if (exerciseEntity.getIndependentLoads() == null) {
+            // Dumbbells are typically one per hand; other loading types share one load.
             exerciseEntity.setIndependentLoads(exerciseEntity.getLoadingType() == LoadingType.DUMBBELL);
         }
     }
