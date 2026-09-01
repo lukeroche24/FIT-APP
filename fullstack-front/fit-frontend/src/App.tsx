@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ActiveSessionProvider } from "./hooks/ActiveSession";
+import { RedirectIfAuthenticated, RequireAuth } from "./hooks/useRequireAuth";
 import Home from "./components/Home/Home";
 import ExerciseLibrary from "./components/ExerciseLibrary/ExerciseLibrary";
 import WorkoutList from "./components/WorkoutList/WorkoutList";
@@ -65,22 +66,22 @@ function App() {
       <DocumentTitle />
       <ActiveSessionProvider>
         <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/exercises" element={<ExerciseLibrary />} />
-        <Route path="/workouts" element={<WorkoutList />} />
-        <Route path="/workouts/:id" element={<WorkoutDetail />} />
-        <Route path="/workout-logs" element={<WorkoutLogList />} />
-        <Route path="/workout-logs/:id" element={<WorkoutLogDetail />} />
-        <Route path="/plans" element={<PlanList />} />
-        <Route path="/plans/current" element={<CurrentPlan />} />
-        <Route path="/plans/:id" element={<PlanBuilder />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/friends/:userId" element={<FriendProfile />} />
-        <Route path="/feed" element={<Feed />} />
-        <Route path="/feed/:id" element={<WorkoutLogDetail />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+          <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
+          <Route path="/exercises" element={<RequireAuth><ExerciseLibrary /></RequireAuth>} />
+          <Route path="/workouts" element={<RequireAuth><WorkoutList /></RequireAuth>} />
+          <Route path="/workouts/:id" element={<RequireAuth><WorkoutDetail /></RequireAuth>} />
+          <Route path="/workout-logs" element={<RequireAuth><WorkoutLogList /></RequireAuth>} />
+          <Route path="/workout-logs/:id" element={<RequireAuth><WorkoutLogDetail /></RequireAuth>} />
+          <Route path="/plans" element={<RequireAuth><PlanList /></RequireAuth>} />
+          <Route path="/plans/current" element={<RequireAuth><CurrentPlan /></RequireAuth>} />
+          <Route path="/plans/:id" element={<RequireAuth><PlanBuilder /></RequireAuth>} />
+          <Route path="/friends" element={<RequireAuth><Friends /></RequireAuth>} />
+          <Route path="/friends/:userId" element={<RequireAuth><FriendProfile /></RequireAuth>} />
+          <Route path="/feed" element={<RequireAuth><Feed /></RequireAuth>} />
+          <Route path="/feed/:id" element={<RequireAuth><WorkoutLogDetail /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
+          <Route path="/login" element={<RedirectIfAuthenticated><Login /></RedirectIfAuthenticated>} />
+          <Route path="/register" element={<RedirectIfAuthenticated><Register /></RedirectIfAuthenticated>} />
         </Routes>
       </ActiveSessionProvider>
     </BrowserRouter>

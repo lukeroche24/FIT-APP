@@ -27,6 +27,7 @@ function formatLift(weight: number | null, reps: number | null): string {
   return `${formatKgAmount(weight)} kg × ${reps}`;
 }
 
+/** Estimated 1RM (recent window), tested 1RM, and heaviest successful set. */
 function StrengthLookup({ userId }: StrengthLookupProps) {
   const [exercises, setExercises] = useState<StrengthExerciseOption[]>([]);
   const [exerciseId, setExerciseId] = useState<number | "">("");

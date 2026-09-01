@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Workout template: ordered exercises and planned sets. Starting a session
+ * clones this into a {@link WorkoutLogEntity}.
+ */
 @EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
@@ -24,8 +28,6 @@ public class WorkoutEntity extends BaseEntity{
     private String description;
 
     private String name;
-
-    private Boolean visibility;
 
     @OneToMany(mappedBy = "workoutEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")

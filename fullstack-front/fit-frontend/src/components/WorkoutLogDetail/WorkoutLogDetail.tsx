@@ -25,6 +25,10 @@ import AddExerciseToLog from "../AddExerciseToLog/AddExerciseToLog";
 import LoggedSetRow from "../LoggedSetRow/LoggedSetRow";
 import "./WorkoutLogDetail.css";
 
+/**
+ * One logged session. The owner can edit while in progress, or reopen a
+ * completed log. Friends see completed logs read-only and can copy them.
+ */
 function WorkoutLogDetail() {
   const isAuthenticated = useRequireAuth();
   const navigate = useNavigate();
@@ -74,7 +78,12 @@ function WorkoutLogDetail() {
       const updated = await updateWorkoutLog(workoutLog.id, { name: nameDraft });
       setWorkoutLog(updated);
       if (!updated.completedAt) {
-        setInProgress({ id: updated.id, name: updated.name, startedAt: updated.startedAt });
+        setInProgress({
+          id: updated.id,
+          name: updated.name,
+          startedAt: updated.startedAt,
+          sourceWorkoutId: updated.sourceWorkoutId,
+        });
       }
       setEditingName(false);
     } catch (err) {

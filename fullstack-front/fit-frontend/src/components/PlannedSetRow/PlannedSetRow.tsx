@@ -69,6 +69,7 @@ function formatSetSummary(
   return parts.length > 0 ? parts.join(" · ") : "No targets";
 }
 
+/** Planned set on a workout template. Weights snap to the exercise load step. */
 function PlannedSetRow({
   set,
   tracking,

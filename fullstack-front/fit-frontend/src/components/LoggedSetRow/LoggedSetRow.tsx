@@ -87,6 +87,10 @@ function FailToggle({
   );
 }
 
+/**
+ * One logged set. Unilateral rows copy left into empty right on blur.
+ * Failed flags are ignored by progression; weights snap to the exercise step.
+ */
 function LoggedSetRow({
   set,
   tracking,
@@ -155,6 +159,7 @@ function LoggedSetRow({
   };
 
   const copyLeftToRightIfEmpty = () => {
+    // Same-load both sides: fill right only when the user left it blank.
     const nextReps = rightReps === "" && reps !== "" ? reps : rightReps;
     const nextWeight = rightWeight === "" && weight !== "" ? weight : rightWeight;
     if (nextReps !== rightReps) {

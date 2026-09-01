@@ -38,6 +38,10 @@ function statusLabel(status: PlanOccurrenceStatus | undefined, hasWorkout: boole
   return null;
 }
 
+/**
+ * Week grid. Upcoming and rest days have no badge; only done / missed / today
+ * are labelled. Drag-and-drop is off when read-only (friend profile).
+ */
 function PlanDayGrid({
   days,
   onAssign,

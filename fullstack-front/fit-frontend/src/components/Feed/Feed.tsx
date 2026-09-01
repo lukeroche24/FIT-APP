@@ -11,6 +11,10 @@ import Pager from "../Pager/Pager";
 import "../Profile/Profile.css";
 import "./Feed.css";
 
+/**
+ * Friends' completed sessions. Copy creates an independent template in the
+ * caller's library.
+ */
 function Feed() {
   const isAuthenticated = useRequireAuth();
 

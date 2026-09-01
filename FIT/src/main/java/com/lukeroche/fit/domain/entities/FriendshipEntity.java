@@ -9,6 +9,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * One friend request or accepted friendship. Stored in the direction of who
+ * sent it; lookups try both directions.
+ */
 @Getter
 @Setter
 @ToString()

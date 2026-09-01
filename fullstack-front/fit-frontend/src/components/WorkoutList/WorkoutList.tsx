@@ -70,7 +70,7 @@ function WorkoutList() {
     setSaveError(null);
     setSaving(true);
     try {
-      const created = await createWorkout({ name, description, visibility: true });
+      const created = await createWorkout({ name, description });
       closeModal();
       navigate(`/workouts/${created.id}`, { state: { isNew: true } });
     } catch (err) {

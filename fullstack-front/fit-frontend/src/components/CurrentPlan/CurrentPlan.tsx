@@ -17,6 +17,7 @@ function formatDayLabel(dateStr: string): string {
   return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 }
 
+/** Calendar date in the browser timezone; UTC ISO would shift the weekday. */
 function localIsoDate(date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -24,6 +25,7 @@ function localIsoDate(date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
+/** Week index that contains today, or the last week if the plan has already ended. */
 function weekOffsetForToday(entries: UpcomingWorkoutResponse[]): number {
   const today = localIsoDate();
   const todayIndex = entries.findIndex((entry) => entry.date === today);
@@ -54,6 +56,10 @@ interface CurrentPlanScheduleProps {
   loadUpcoming?: (weeks: number) => Promise<UpcomingWorkoutResponse[]>;
 }
 
+/**
+ * Active-plan calendar. Status comes from upcoming occurrences (completed /
+ * missed / due), not from mutating the weekday template.
+ */
 export function CurrentPlanSchedule({
   plan,
   onDelete,
@@ -270,6 +276,7 @@ export function CurrentPlanSchedule({
   );
 }
 
+/** Legacy URL; the live schedule is on the plans page. */
 function CurrentPlan() {
   return <Navigate to="/plans" replace />;
 }

@@ -6,6 +6,10 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * An exercise on a logged session. Tracking and laterality can differ from
+ * the library exercise for this session only.
+ */
 @Getter
 @Setter
 @ToString(exclude = {"loggedSets"})

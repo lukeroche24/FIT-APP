@@ -4,6 +4,7 @@ import { useActiveSession } from "../../hooks/ActiveSession";
 import Logout from "../Logout/Logout";
 import "./NavBar.css";
 
+/** In-progress session chip is hidden while already on that session page. */
 function NavBar() {
   const { inProgress } = useActiveSession();
   const location = useLocation();

@@ -21,6 +21,10 @@ function toNumber(value: string): number | undefined {
   return value === "" ? undefined : Number(value);
 }
 
+/**
+ * Create or edit a library exercise. Blank loading type lets the API infer
+ * from the name. Pure bodyweight (no weight tracked) omits load step.
+ */
 function ExerciseForm({ exercise, onSaved, onDeleted, onCancel }: Props) {
   const [name, setName] = useState(exercise?.name ?? "");
   const [description, setDescription] = useState(exercise?.description ?? "");
@@ -42,6 +46,7 @@ function ExerciseForm({ exercise, onSaved, onDeleted, onCancel }: Props) {
       description,
       loadingType: loadingType === "" ? undefined : loadingType,
       loadStep:
+        // Added-load bodyweight still needs a step; unweighted work does not.
         loadingType === "BODYWEIGHT" && !tracking.tracksWeight ? undefined : toNumber(loadStep),
       tracksWeight: tracking.tracksWeight,
       tracksDuration: tracking.tracksDuration,

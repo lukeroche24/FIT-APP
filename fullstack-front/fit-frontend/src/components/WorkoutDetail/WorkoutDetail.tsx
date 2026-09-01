@@ -23,6 +23,7 @@ interface WorkoutPageState {
 
 let nextDraftId = 0;
 
+/** Negative ids mark local drafts until {@link persistWorkoutEdits} POSTs them. */
 function nextTempId(): number {
   nextDraftId -= 1;
   return nextDraftId;
@@ -35,6 +36,10 @@ function cloneWorkoutExercises(exercises: WorkoutExerciseResponse[]): WorkoutExe
   }));
 }
 
+/**
+ * Workout template editor. New workouts open in edit mode; Start uses
+ * {@link useActiveSession} so a different open session is refused.
+ */
 function WorkoutDetail() {
   const isAuthenticated = useRequireAuth();
   const { id } = useParams();

@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Weekly plan. At most one row per user has {@code active == true};
+ * {@code startDate} is set when it is activated.
+ */
 @Getter
 @Setter
 @ToString(exclude = {"planDays"})

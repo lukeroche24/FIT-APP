@@ -9,6 +9,9 @@ interface Props {
   idPrefix?: string;
 }
 
+/**
+ * Limb pattern plus optional independent-loads checkbox (shown for dumbbells).
+ */
 function LateralityFields({
   value,
   onChange,

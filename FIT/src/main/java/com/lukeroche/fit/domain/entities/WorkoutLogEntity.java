@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * A started session. {@code completedAt == null} means in progress (private);
+ * once set, friends can see it on the feed. {@code sourceWorkoutId} is the
+ * template it was cloned from, used to resume the same workout.
+ */
 @Getter
 @Setter
 @ToString(exclude = {"loggedExercises"})

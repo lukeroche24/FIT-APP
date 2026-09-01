@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.util.UUID;
 
+/**
+ * Private exercise in the owner's library. Loading type and load step drive
+ * how progression snaps weight; laterality and tracking flags drive the UI.
+ */
 @Getter
 @Setter
 @ToString()

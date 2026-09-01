@@ -6,6 +6,10 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * An exercise slot on a workout template: order, programmed rep range,
+ * tracking/laterality overrides, and planned sets.
+ */
 @Getter
 @Setter
 @ToString(exclude = {"plannedSets"})
@@ -17,8 +21,6 @@ import java.util.List;
 public class WorkoutExerciseEntity extends BaseEntity{
 
     private Long orderIndex;
-
-    //private String notes;
 
     @ManyToOne
     @JoinColumn(name = "workout_id")
