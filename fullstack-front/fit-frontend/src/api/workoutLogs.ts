@@ -69,6 +69,8 @@ export interface InProgressSession {
   id: number;
   name: string;
   startedAt: string;
+  /** Template this session was started from; used to resume the same workout. */
+  sourceWorkoutId: number | null;
 }
 
 export function listWorkoutLogs(options?: {
@@ -88,6 +90,10 @@ export function listWorkoutLogs(options?: {
   ).then((response) => handleJsonResponse<ListPage<WorkoutLogResponse>>(response));
 }
 
+/**
+ * Clones a workout template into a new in-progress log and seeds load from
+ * progression. Fails if another session is already open.
+ */
 export function startSession(
   workoutId: number,
   request: StartSessionRequest,
@@ -99,6 +105,7 @@ export function startSession(
   }).then((response) => handleJsonResponse<WorkoutLogResponse>(response));
 }
 
+/** Empty 404 means no open session, not an error. */
 export function getInProgressSession(): Promise<InProgressSession | null> {
   return fetch(`${API_URL}/workout-logs/in-progress`, {
     method: "GET",

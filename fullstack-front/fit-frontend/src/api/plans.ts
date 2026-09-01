@@ -41,6 +41,7 @@ export function listPlans(options?: {
   query?: string;
   page?: number;
   size?: number;
+  /** When true, omit the currently active plan (plan picker on the current-plan page). */
   excludeActive?: boolean;
 }): Promise<ListPage<PlanResponse>> {
   return fetch(
@@ -120,6 +121,7 @@ export function deactivatePlan(id: number): Promise<PlanResponse> {
   }).then((response) => handleJsonResponse<PlanResponse>(response));
 }
 
+/** Empty 404 means no plan is active. */
 export function getActivePlan(): Promise<PlanResponse | null> {
   return fetch(`${API_URL}/plans/active`, {
     method: "GET",
@@ -130,6 +132,7 @@ export function getActivePlan(): Promise<PlanResponse | null> {
   });
 }
 
+/** Empty 404 means this friend has no active plan, or it is not visible. */
 export function getFriendActivePlan(userId: string): Promise<PlanResponse | null> {
   return fetch(`${API_URL}/users/${userId}/plan`, {
     method: "GET",
@@ -157,6 +160,7 @@ export function getFriendUpcomingWorkouts(
   }).then((response) => handleJsonResponse<UpcomingWorkoutResponse[]>(response));
 }
 
+/** Empty 404 means nothing is scheduled from today. */
 export function getNextWorkout(): Promise<UpcomingWorkoutResponse | null> {
   return fetch(`${API_URL}/plans/active/next`, {
     method: "GET",
@@ -167,6 +171,10 @@ export function getNextWorkout(): Promise<UpcomingWorkoutResponse | null> {
   });
 }
 
+/**
+ * Saves plan name/weeks, then syncs weekday slots: missing days are cleared,
+ * changed days are PUT. Unchanged days are left alone.
+ */
 export async function persistPlanEdits(
   original: PlanResponse,
   name: string,

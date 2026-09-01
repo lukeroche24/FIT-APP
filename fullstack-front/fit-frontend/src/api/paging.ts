@@ -10,6 +10,10 @@ export interface ListPage<T> {
   last: boolean;
 }
 
+/**
+ * Spring Data page query. Default sort is name ascending; list endpoints
+ * that need recency pass `sort` explicitly.
+ */
 export function buildPageQuery(options?: {
   query?: string;
   page?: number;

@@ -122,6 +122,10 @@ export function getFeed(options?: { page?: number; size?: number }): Promise<Lis
   ).then((response) => handleJsonResponse<ListPage<FeedItemResponse>>(response));
 }
 
+/**
+ * Copies a visible completed log into the caller's workout library. The new
+ * template is independent of the source log and of the friend's exercises.
+ */
 export function copyWorkoutLogToLibrary(workoutLogId: number): Promise<WorkoutResponse> {
   return fetch(`${API_URL}/workout-logs/${workoutLogId}/copy`, {
     method: "POST",

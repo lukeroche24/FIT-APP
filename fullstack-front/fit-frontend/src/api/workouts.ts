@@ -7,7 +7,6 @@ const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 export interface WorkoutRequest {
   name: string;
   description: string;
-  visibility: boolean;
 }
 
 export interface PlannedSetRequest {
@@ -53,7 +52,6 @@ export interface WorkoutResponse {
   description: string;
   createdByUserId: string;
   createdAt: string;
-  visibility: boolean;
   exercises: WorkoutExerciseResponse[];
 }
 
@@ -190,6 +188,7 @@ export function removePlannedSet(
   }).then((response) => handleJsonResponse<void>(response));
 }
 
+/** Negative ids are local drafts that have not been POSTed yet. */
 function isTempId(id: number): boolean {
   return id < 0;
 }
@@ -246,6 +245,11 @@ async function syncSets(
   }
 }
 
+/**
+ * Writes local draft exercises/sets to the API. Negative ids are unsaved
+ * rows; existing ids are patched or deleted to match the draft. Order is
+ * sent 1-based after the graph is saved.
+ */
 export async function persistWorkoutEdits(
   original: WorkoutResponse,
   name: string,

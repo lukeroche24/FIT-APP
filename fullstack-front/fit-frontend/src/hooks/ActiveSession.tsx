@@ -8,16 +8,35 @@ interface ActiveSessionContextValue {
   inProgress: InProgressSession | null;
   refresh: () => Promise<void>;
   setInProgress: (session: InProgressSession | null) => void;
+  /** Clears the banner unless a different session id is still in progress. */
   clearInProgress: (id?: number) => void;
+  /**
+   * Resume if the open session is already this workout; otherwise refuse so
+   * the user finishes or continues the existing one first.
+   */
   startOrResume: (workoutId: number) => Promise<InProgressSession>;
 }
 
 const ActiveSessionContext = createContext<ActiveSessionContextValue | null>(null);
 
-function toSession(session: { id: number; name: string; startedAt: string }): InProgressSession {
-  return { id: session.id, name: session.name, startedAt: session.startedAt };
+function toSession(session: {
+  id: number;
+  name: string;
+  startedAt: string;
+  sourceWorkoutId?: number | null;
+}): InProgressSession {
+  return {
+    id: session.id,
+    name: session.name,
+    startedAt: session.startedAt,
+    sourceWorkoutId: session.sourceWorkoutId ?? null,
+  };
 }
 
+/**
+ * Holds the caller's single in-progress session for the nav banner and
+ * start/resume. Refresh is skipped when nobody is logged in.
+ */
 export function ActiveSessionProvider({ children }: { children: ReactNode }) {
   const [inProgress, setInProgressState] = useState<InProgressSession | null>(null);
 
@@ -28,7 +47,7 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
     }
     try {
       const session = await getInProgressSession();
-      setInProgressState(session);
+      setInProgressState(session ? toSession(session) : null);
     } catch {
       setInProgressState(null);
     }
@@ -44,6 +63,7 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
 
   const clearInProgress = useCallback((id?: number) => {
     setInProgressState((current) => {
+      // Ignore a finish/delete for a session that is no longer the open one.
       if (id != null && current?.id !== id) {
         return current;
       }
@@ -54,14 +74,25 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
   const startOrResume = useCallback(
     async (workoutId: number) => {
       if (inProgress) {
-        return inProgress;
+        if (inProgress.sourceWorkoutId === workoutId) {
+          return inProgress;
+        }
+        throw new Error(
+          `Finish or continue "${inProgress.name}" before starting another session`,
+        );
       }
-      const log = await startSession(workoutId, {});
-      const session = toSession(log);
-      setInProgressState(session);
-      return session;
+      try {
+        const log = await startSession(workoutId, {});
+        const session = toSession(log);
+        setInProgressState(session);
+        return session;
+      } catch (err) {
+        // Server may already have a session the client didn't know about.
+        await refresh();
+        throw err;
+      }
     },
-    [inProgress],
+    [inProgress, refresh],
   );
 
   const value = useMemo(

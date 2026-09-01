@@ -30,6 +30,10 @@ async function handleAuthResponse(response: Response): Promise<AuthResponse> {
   return response.json();
 }
 
+/**
+ * Public login. Uses its own error path so a 401 stays on this page instead
+ * of bouncing through the authenticated client.
+ */
 export function login(request: LoginRequest): Promise<AuthResponse> {
   return fetch(`${API_URL}/auth/login`, {
     method: "POST",
@@ -38,6 +42,7 @@ export function login(request: LoginRequest): Promise<AuthResponse> {
   }).then(handleAuthResponse);
 }
 
+/** Public register; returns a JWT so the client does not need a second login. */
 export function register(request: RegisterRequest): Promise<AuthResponse> {
   return fetch(`${API_URL}/auth/register`, {
     method: "POST",

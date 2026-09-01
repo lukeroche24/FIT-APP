@@ -45,6 +45,10 @@ export function getMe(): Promise<MeResponse> {
   }).then((response) => handleJsonResponse<MeResponse>(response));
 }
 
+/**
+ * Saves profile. If email or username change, the API returns a new JWT and
+ * this replaces the stored token so the session stays valid.
+ */
 export function updateMe(request: UpdateProfileRequest): Promise<MeResponse> {
   return fetch(`${API_URL}/users/me`, {
     method: "PATCH",
