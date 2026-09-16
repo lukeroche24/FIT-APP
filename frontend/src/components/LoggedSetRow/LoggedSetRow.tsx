@@ -1,3 +1,17 @@
+/*
+ * Filename: LoggedSetRow.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useState } from "react";
 import type { LoggedSetRequest, LoggedSetResponse } from "../../api/workoutLogs";
 import { trackingFrom, type TrackingFlags } from "../../utils/tracking";
@@ -75,6 +89,7 @@ function FailToggle({
   checked: boolean;
   onToggle: (next: boolean) => void;
 }) {
+  // [AI-GENERATED: Cursor]
   return (
     <button
       type="button"
@@ -159,7 +174,6 @@ function LoggedSetRow({
   };
 
   const copyLeftToRightIfEmpty = () => {
-    // Same-load both sides: fill right only when the user left it blank.
     const nextReps = rightReps === "" && reps !== "" ? reps : rightReps;
     const nextWeight = rightWeight === "" && weight !== "" ? weight : rightWeight;
     if (nextReps !== rightReps) {
@@ -176,6 +190,7 @@ function LoggedSetRow({
   ) : null;
 
   if (readOnly) {
+    // [AI-GENERATED: Cursor]
     return (
       <div className="set-row">
         <div className="set-row-head">
@@ -221,6 +236,7 @@ function LoggedSetRow({
     </div>
   );
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="set-row">
       <div className="set-row-head">
@@ -334,5 +350,4 @@ function LoggedSetRow({
 }
 
 export default LoggedSetRow;
-
 

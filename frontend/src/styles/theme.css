@@ -1,3 +1,15 @@
+/*
+ * Filename: theme.css
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains code generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - AI-generated sections are marked with comments: [AI-GENERATED]
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
+/* [AI-GENERATED: Cursor] */
 :root {
   --accent: #FF4F6D;
   --accent-dark: #e83151;
@@ -62,10 +74,6 @@ h1 {
   border-radius: var(--bs-border-radius-sm);
 }
 
-/* Bootstrap 5.3 bakes each .btn-* variant's colors into its own
-   component-scoped --bs-btn-* variables at build time, so overriding
-   the root --bs-primary/--bs-danger tokens alone has no effect on
-   buttons — override the component variables directly instead. */
 .btn-primary {
   --bs-btn-color: #fff;
   --bs-btn-bg: var(--accent);

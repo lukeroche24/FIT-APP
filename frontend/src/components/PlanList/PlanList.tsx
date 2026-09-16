@@ -1,3 +1,18 @@
+/*
+ * Filename: PlanList.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +76,7 @@ function PlanList() {
 
     getActivePlan()
       .then(setActivePlan)
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load plans")))
       .finally(() => setActiveReady(true));
   }, [isAuthenticated]);
@@ -78,6 +94,7 @@ function PlanList() {
         }
         setLoading(false);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         setError(toErrorMessage(err, "Failed to load plans"));
         setLoading(false);
@@ -105,6 +122,7 @@ function PlanList() {
       closeModal();
       navigate(`/plans/${created.id}`, { state: { isNew: true } });
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setSaveError(toErrorMessage(err, "Failed to create plan"));
     } finally {
       setSaving(false);
@@ -128,6 +146,7 @@ function PlanList() {
       }
       await reloadOtherPlans();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to delete plan"));
     }
   };
@@ -139,10 +158,12 @@ function PlanList() {
       setActivePlan(activated);
       await reloadOtherPlans();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to activate plan"));
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout width="wide">
       <div className="page-header">

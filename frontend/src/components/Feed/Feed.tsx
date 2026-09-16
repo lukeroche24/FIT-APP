@@ -1,3 +1,18 @@
+/*
+ * Filename: Feed.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { copyWorkoutLogToLibrary, getFeed } from "../../api/friends";
@@ -42,6 +57,7 @@ function Feed() {
         setTotalPages(result.totalPages);
         setLoading(false);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         setError(toErrorMessage(err, "Failed to load feed"));
         setLoading(false);
@@ -55,12 +71,14 @@ function Feed() {
       await copyWorkoutLogToLibrary(workoutLogId);
       setCopiedId(workoutLogId);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to copy workout"));
     } finally {
       setCopyingId(null);
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout>
       <div className="page-header">

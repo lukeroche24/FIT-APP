@@ -1,3 +1,18 @@
+/*
+ * Filename: AssignWorkoutToDay.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import { listWorkouts } from "../../api/workouts";
 import { DEFAULT_PAGE_SIZE } from "../../api/paging";
@@ -37,10 +52,12 @@ function AssignWorkoutToDay({ onPicked, onCancel }: Props) {
         setWorkouts(result.content);
         setTotalPages(result.totalPages);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load workouts")))
       .finally(() => setLoading(false));
   }, [query, page]);
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="p-3">
       <h2>Assign Workout</h2>

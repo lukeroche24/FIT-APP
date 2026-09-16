@@ -1,3 +1,14 @@
+/*
+ * Filename: AbstractServiceTests.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - I decided which behaviours to test.
+ * - This test file was generated with Cursor from those cases.
+ * - Tool Used: Cursor
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 package com.lukeroche.fit.services;
 
 import com.lukeroche.fit.domain.dto.workout.AddWorkoutExerciseRequest;

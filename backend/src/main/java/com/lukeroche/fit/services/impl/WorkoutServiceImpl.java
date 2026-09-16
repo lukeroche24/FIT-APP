@@ -1,3 +1,13 @@
+/*
+ * Filename: WorkoutServiceImpl.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.impl;
 
 import com.lukeroche.fit.domain.dto.workout.PlannedSetRequest;
@@ -150,9 +160,7 @@ public class WorkoutServiceImpl implements WorkoutService {
             return workoutExerciseRepository.save(reorderedExercise);
         }
 
-        // Clients send 1-based order; the list is 0-based after removing the row.
         int newIndex = Math.toIntExact(workoutExerciseRequest.getOrderIndex()) - 1;
-
 
         workoutExercises.remove(reorderedExercise);
 
@@ -249,9 +257,6 @@ public class WorkoutServiceImpl implements WorkoutService {
         return plannedSetRepository.existsByIdAndWorkoutExerciseEntity_Id(setId, workoutExerciseId);
     }
 
-    // Copies produce independent workout/set rows (no FK back to the source log). Exercises are reused
-    // from the copier's library when the name already exists, otherwise a new library row is created.
-    // If the friend later renames/deletes their exercise or the source log, this copy is unaffected.
     @Override
     @Transactional
     public WorkoutEntity copyWorkoutLogToLibrary(Long workoutLogId, UUID copyingUserId) {
@@ -365,8 +370,6 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     private static int[] resolveRepRange(WorkoutExerciseEntity sourceExercise, List<LoggedSetEntity> sets) {
-        // Prefer the source template's min/max so a copy keeps the programmed
-        // range even when the session went outside it.
         if (sourceExercise != null && sourceExercise.getMinReps() != null && sourceExercise.getMaxReps() != null) {
             int min = sourceExercise.getMinReps();
             int max = sourceExercise.getMaxReps();

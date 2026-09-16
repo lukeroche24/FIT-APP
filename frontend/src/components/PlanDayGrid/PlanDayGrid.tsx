@@ -1,3 +1,17 @@
+/*
+ * Filename: PlanDayGrid.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useState } from "react";
 import type { DragEvent } from "react";
 import type { PlanOccurrenceStatus } from "../../api/plans";
@@ -78,6 +92,7 @@ function PlanDayGrid({
     onMove(source, targetDay);
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="plan-day-grid">
       {days.map((day) => {

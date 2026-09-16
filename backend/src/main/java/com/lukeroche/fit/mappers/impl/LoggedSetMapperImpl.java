@@ -1,6 +1,15 @@
+/*
+ * Filename: LoggedSetMapperImpl.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.mappers.impl;
 
-import com.lukeroche.fit.domain.dto.workoutlog.LoggedSetRequest;
 import com.lukeroche.fit.domain.dto.workoutlog.LoggedSetResponse;
 import com.lukeroche.fit.domain.entities.LoggedSetEntity;
 import com.lukeroche.fit.mappers.LoggedSetMapper;
@@ -20,9 +29,4 @@ public class LoggedSetMapperImpl implements LoggedSetMapper {
     public LoggedSetResponse toResponse(LoggedSetEntity loggedSetEntity) {
         return modelMapper.map(loggedSetEntity, LoggedSetResponse.class);
     }
-
-//    @Override
-//    public LoggedSetEntity fromRequest(LoggedSetRequest loggedSetRequest) {
-//        return modelMapper.map(loggedSetRequest, LoggedSetEntity.class);
-//    }
 }

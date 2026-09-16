@@ -1,3 +1,13 @@
+/*
+ * Filename: WorkoutLogServiceImpl.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.impl;
 
 import com.lukeroche.fit.domain.dto.workoutlog.AddLoggedExerciseRequest;
@@ -275,7 +285,6 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
         String notes = request != null ? request.getNotes() : null;
 
         if (reps == null || (SetTracking.tracksWeight(loggedExercise.getTracksWeight()) && weight == null)) {
-            // Extra sets have no planned row; fill blanks from the same suggestion as startSession.
             Recommendation suggestion = progressionService.forExercise(
                     loggedExercise.getWorkoutLogEntity().getCreatedByUserId(),
                     loggedExercise.getExerciseEntity());
@@ -324,8 +333,6 @@ public class WorkoutLogServiceImpl implements WorkoutLogService {
     @Transactional
     public LoggedSetEntity updateLoggedSet(Long setId, LoggedSetRequest request) {
         return loggedSetRepository.findById(setId).map(existingSet -> {
-            // Intentionally does not write targetReps/targetWeight. Syncing them to
-            // actuals would make every edited set look like a hit.
             ExerciseEntity exercise = existingSet.getLoggedExerciseEntity().getExerciseEntity();
             Optional.ofNullable(request.getActualReps()).ifPresent(existingSet::setActualReps);
             Optional.ofNullable(request.getActualWeight())

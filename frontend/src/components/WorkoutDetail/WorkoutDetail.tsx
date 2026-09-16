@@ -1,3 +1,19 @@
+/*
+ * Filename: WorkoutDetail.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import type { DragEvent } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -31,6 +47,7 @@ function nextTempId(): number {
   return nextDraftId;
 }
 
+// [AI-GENERATED: Cursor]
 function cloneWorkoutExercises(exercises: WorkoutExerciseResponse[]): WorkoutExerciseResponse[] {
   return exercises.map((exercise) => ({
     ...exercise,
@@ -84,6 +101,7 @@ function WorkoutDetail() {
     }
 
     loadSavedWorkout()
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load workout")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, loadSavedWorkout]);
@@ -97,6 +115,7 @@ function WorkoutDetail() {
       const session = await startOrResume(workout.id);
       navigate(`/workout-logs/${session.id}`);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to start session"));
     }
   };
@@ -127,6 +146,7 @@ function WorkoutDetail() {
       setIsNew(false);
       setEditing(false);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to save workout"));
     } finally {
       setSaving(false);
@@ -141,6 +161,7 @@ function WorkoutDetail() {
   ) => {
     const flags = tracking ?? trackingFrom(exercise);
     const limbs = lateralityFrom(exercise);
+    // [AI-GENERATED: Cursor]
     setExercises((prev) => [
       ...prev,
       {
@@ -166,6 +187,7 @@ function WorkoutDetail() {
   };
 
   const handleUpdateTracking = (workoutExerciseId: number, tracking: TrackingFlags) => {
+    // [AI-GENERATED: Cursor]
     setExercises((prev) =>
       prev.map((workoutExercise) =>
         workoutExercise.id === workoutExerciseId
@@ -185,6 +207,7 @@ function WorkoutDetail() {
     minReps: number | null,
     maxReps: number | null,
   ) => {
+    // [AI-GENERATED: Cursor]
     setExercises((prev) =>
       prev.map((workoutExercise) =>
         workoutExercise.id === workoutExerciseId ? { ...workoutExercise, minReps, maxReps } : workoutExercise,
@@ -193,6 +216,7 @@ function WorkoutDetail() {
   };
 
   const handleAddSet = (workoutExerciseId: number) => {
+    // [AI-GENERATED: Cursor]
     setExercises((prev) =>
       prev.map((workoutExercise) => {
         if (workoutExercise.id !== workoutExerciseId) {
@@ -220,6 +244,7 @@ function WorkoutDetail() {
   };
 
   const handleUpdateSet = (workoutExerciseId: number, setId: number, request: PlannedSetRequest) => {
+    // [AI-GENERATED: Cursor]
     setExercises((prev) =>
       prev.map((workoutExercise) => {
         if (workoutExercise.id !== workoutExerciseId) {
@@ -247,6 +272,7 @@ function WorkoutDetail() {
   };
 
   const handleRemoveSet = (workoutExerciseId: number, setId: number) => {
+    // [AI-GENERATED: Cursor]
     setExercises((prev) =>
       prev.map((workoutExercise) => {
         if (workoutExercise.id !== workoutExerciseId) {
@@ -286,6 +312,7 @@ function WorkoutDetail() {
         return prev;
       }
 
+      // [AI-GENERATED: Cursor]
       const updated = [...prev];
       const [draggedItem] = updated.splice(draggedIndex, 1);
       updated.splice(overIndex, 0, draggedItem);
@@ -302,6 +329,7 @@ function WorkoutDetail() {
   };
 
   if (loading) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout>
         <p>Loading...</p>
@@ -310,6 +338,7 @@ function WorkoutDetail() {
   }
 
   if (!workout) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout>
         <ErrorBanner message={error} />
@@ -317,6 +346,7 @@ function WorkoutDetail() {
     );
   }
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout>
       <ErrorBanner message={error} />

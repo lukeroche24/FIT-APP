@@ -1,3 +1,15 @@
+/*
+ * Filename: http.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - AI was used for the spread syntax in authHeaders.
+ * - The API error-body parsing and 401 logout path are AI-generated.
+ * - Tool Used: Cursor
+ * - AI-generated sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
 import { clearToken, getToken } from "./token";
 
 /**
@@ -8,15 +20,18 @@ export function authHeaders(): HeadersInit {
   const token = getToken();
   return {
     "Content-Type": "application/json",
+    // [AI-GENERATED: Cursor]
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
+// [AI-GENERATED: Cursor]
 interface ApiErrorResponse {
   status: number;
   message: string;
 }
 
+// [AI-GENERATED: Cursor]
 function redirectToLogin(): void {
   clearToken();
   const path = window.location.pathname;
@@ -30,6 +45,7 @@ function redirectToLogin(): void {
  * login (except on login/register). Empty error bodies become "Request failed".
  * 403/404 are left as errors so hidden resources do not look like a logout.
  */
+// [AI-GENERATED: Cursor]
 export async function handleJsonResponse<T>(response: Response): Promise<T> {
   if (response.status === 401) {
     redirectToLogin();

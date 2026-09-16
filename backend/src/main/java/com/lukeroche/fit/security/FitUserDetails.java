@@ -1,3 +1,13 @@
+/*
+ * Filename: FitUserDetails.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.security;
 
 import com.lukeroche.fit.domain.entities.User;
@@ -25,7 +35,6 @@ public class FitUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Every account is ROLE_USER; there is no admin role.
         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 

@@ -1,3 +1,15 @@
+/*
+ * Filename: ActiveSession.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Catch/display of API failures in this file is AI-generated.
+ * - Tool Used: Cursor
+ * - AI-generated error-handling sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { getInProgressSession, startSession } from "../api/workoutLogs";
@@ -49,6 +61,7 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
       const session = await getInProgressSession();
       setInProgressState(session ? toSession(session) : null);
     } catch {
+      // [AI-GENERATED: Cursor]
       setInProgressState(null);
     }
   }, []);
@@ -63,7 +76,6 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
 
   const clearInProgress = useCallback((id?: number) => {
     setInProgressState((current) => {
-      // Ignore a finish/delete for a session that is no longer the open one.
       if (id != null && current?.id !== id) {
         return current;
       }
@@ -87,7 +99,7 @@ export function ActiveSessionProvider({ children }: { children: ReactNode }) {
         setInProgressState(session);
         return session;
       } catch (err) {
-        // Server may already have a session the client didn't know about.
+        // [AI-GENERATED: Cursor]
         await refresh();
         throw err;
       }

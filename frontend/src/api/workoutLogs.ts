@@ -1,3 +1,14 @@
+/*
+ * Filename: workoutLogs.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 import { authHeaders, handleJsonResponse } from "./http";
 import { buildPageQuery, type ListPage } from "./paging";
 import type { ExerciseResponse, LimbPattern } from "./exercises";
@@ -80,6 +91,7 @@ export function listWorkoutLogs(options?: {
 }): Promise<ListPage<WorkoutLogResponse>> {
   return fetch(
     `${API_URL}/workout-logs?${buildPageQuery({
+      // [AI-GENERATED: Cursor]
       ...options,
       sort: "startedAt,desc",
     })}`,

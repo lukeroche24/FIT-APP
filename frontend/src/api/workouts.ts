@@ -1,3 +1,14 @@
+/*
+ * Filename: workouts.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 import { authHeaders, handleJsonResponse } from "./http";
 import type { ExerciseResponse, LimbPattern } from "./exercises";
 import { buildPageQuery, type ListPage } from "./paging";
@@ -110,6 +121,7 @@ export function addWorkoutExercise(
   return fetch(`${API_URL}/workouts/${workoutId}/exercises`, {
     method: "POST",
     headers: authHeaders(),
+    // [AI-GENERATED: Cursor]
     body: JSON.stringify({ exerciseId, minReps, maxReps, ...tracking }),
   }).then((response) => handleJsonResponse<WorkoutExerciseResponse>(response));
 }

@@ -1,3 +1,13 @@
+/*
+ * Filename: token.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - JWT expiry checking in this file was generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - AI-generated sections are marked with comments: // [AI-GENERATED]
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
 const TOKEN_KEY = "fit_token";
 
 export function setToken(token: string): void {
@@ -8,6 +18,7 @@ export function setToken(token: string): void {
  * Reads the stored JWT. Missing, malformed, or expired tokens are cleared
  * and treated as logged out so the UI never treats a stale string as a session.
  */
+// [AI-GENERATED: Cursor]
 export function getToken(): string | null {
   const token = localStorage.getItem(TOKEN_KEY);
   if (!token || tokenIsExpired(token)) {
@@ -21,6 +32,7 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+// [AI-GENERATED: Cursor]
 function tokenIsExpired(token: string): boolean {
   try {
     const parts = token.split(".");
@@ -33,7 +45,6 @@ function tokenIsExpired(token: string): boolean {
     if (typeof payload.exp !== "number") {
       return true;
     }
-    // JWT exp is seconds; Date.now is milliseconds.
     return payload.exp * 1000 <= Date.now();
   } catch {
     return true;

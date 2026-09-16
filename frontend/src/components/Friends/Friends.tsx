@@ -1,3 +1,19 @@
+/*
+ * Filename: Friends.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
@@ -49,6 +65,7 @@ function Friends() {
     }
 
     loadFriendData()
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load friends")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, loadFriendData]);
@@ -65,6 +82,7 @@ function Friends() {
       const found = await searchUsers(query.trim());
       setResults(found);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setSearchError(toErrorMessage(err, "Search failed"));
     } finally {
       setSearching(false);
@@ -72,6 +90,7 @@ function Friends() {
   };
 
   const setResultStatus = (userId: string, relationshipStatus: UserSearchResult["relationshipStatus"]) => {
+    // [AI-GENERATED: Cursor]
     setResults((prev) =>
       prev.map((result) => (result.id === userId ? { ...result, relationshipStatus } : result)),
     );
@@ -84,6 +103,7 @@ function Friends() {
       setResultStatus(result.id, "PENDING_OUTGOING");
       loadFriendData().catch(() => {});
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setSearchError(toErrorMessage(err, "Failed to send request"));
     }
   };
@@ -98,12 +118,14 @@ function Friends() {
         setResultStatus(accepted.otherUserId, "FRIENDS");
       }
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to accept request"));
     }
   };
 
   const handleDeclineOrCancel = async (id: number) => {
     setError(null);
+    // [AI-GENERATED: Cursor]
     const cancelled = [...incoming, ...outgoing].find((req) => req.id === id);
     try {
       await removeFriendRequest(id);
@@ -113,6 +135,7 @@ function Friends() {
         setResultStatus(cancelled.otherUserId, "NONE");
       }
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to remove request"));
     }
   };
@@ -128,10 +151,12 @@ function Friends() {
       setFriends((prev) => prev.filter((f) => f.userId !== userId));
       setResultStatus(userId, "NONE");
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to unfriend"));
     }
   };
 
+  // [AI-GENERATED: Cursor]
   const renderAction = (result: UserSearchResult) => {
     switch (result.relationshipStatus) {
       case "NONE":
@@ -155,6 +180,7 @@ function Friends() {
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout>
       <div className="page-header">

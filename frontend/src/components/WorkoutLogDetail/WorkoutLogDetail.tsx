@@ -1,3 +1,19 @@
+/*
+ * Filename: WorkoutLogDetail.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { copyWorkoutLogToLibrary } from "../../api/friends";
@@ -65,6 +81,7 @@ function WorkoutLogDetail() {
         setWorkoutLog(log);
         setViewerId(me.id);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load session")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, workoutLogId]);
@@ -87,6 +104,7 @@ function WorkoutLogDetail() {
       }
       setEditingName(false);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to rename session"));
     }
   };
@@ -101,6 +119,7 @@ function WorkoutLogDetail() {
       setWorkoutLog(updated);
       setEditingNotes(false);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to save notes"));
     }
   };
@@ -118,6 +137,7 @@ function WorkoutLogDetail() {
       setEditingNotes(false);
       clearInProgress(workoutLog.id);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to finish session"));
     }
   };
@@ -136,6 +156,7 @@ function WorkoutLogDetail() {
       await removeLoggedExercise(workoutLog.id, loggedExerciseId);
       await refresh();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to remove exercise"));
     }
   };
@@ -147,6 +168,7 @@ function WorkoutLogDetail() {
 
     try {
       const set = await addLoggedSet(workoutLog.id, loggedExerciseId, {});
+      // [AI-GENERATED: Cursor]
       setWorkoutLog((prev) =>
         prev
           ? {
@@ -158,6 +180,7 @@ function WorkoutLogDetail() {
           : prev,
       );
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to add set"));
     }
   };
@@ -173,6 +196,7 @@ function WorkoutLogDetail() {
 
     try {
       const updated = await updateLoggedSet(workoutLog.id, loggedExerciseId, setId, request);
+      // [AI-GENERATED: Cursor]
       setWorkoutLog((prev) =>
         prev
           ? {
@@ -186,6 +210,7 @@ function WorkoutLogDetail() {
           : prev,
       );
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to update set"));
     }
   };
@@ -199,6 +224,7 @@ function WorkoutLogDetail() {
       await removeLoggedSet(workoutLog.id, loggedExerciseId, setId);
       await refresh();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to remove set"));
     }
   };
@@ -216,6 +242,7 @@ function WorkoutLogDetail() {
       clearInProgress(workoutLog.id);
       navigate("/workout-logs");
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to delete session"));
     }
   };
@@ -231,6 +258,7 @@ function WorkoutLogDetail() {
       await copyWorkoutLogToLibrary(workoutLog.id);
       setCopied(true);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to copy workout"));
     } finally {
       setCopying(false);
@@ -238,6 +266,7 @@ function WorkoutLogDetail() {
   };
 
   if (loading) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout>
         <p>Loading...</p>
@@ -246,6 +275,7 @@ function WorkoutLogDetail() {
   }
 
   if (!workoutLog) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout>
         <ErrorBanner message={error} />
@@ -253,6 +283,7 @@ function WorkoutLogDetail() {
     );
   }
 
+  // [AI-GENERATED: Cursor]
   const exercises = [...workoutLog.loggedExercises].sort((a, b) => a.orderIndex - b.orderIndex);
   const isCompleted = Boolean(workoutLog.completedAt);
   const isOwnLog = viewerId != null && workoutLog.createdByUserId === viewerId;
@@ -264,6 +295,7 @@ function WorkoutLogDetail() {
     setEditingNotes(false);
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout>
       <ErrorBanner message={error} />

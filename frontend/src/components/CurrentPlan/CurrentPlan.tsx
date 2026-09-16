@@ -1,3 +1,18 @@
+/*
+ * Filename: CurrentPlan.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { getUpcomingWorkouts, removePlanDay, setPlanDay } from "../../api/plans";
@@ -93,6 +108,7 @@ export function CurrentPlanSchedule({
     setLoading(true);
     setError(null);
     loadSchedule(plan)
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         if (!cancelled) {
           setError(toErrorMessage(err, "Failed to load current plan"));
@@ -134,6 +150,7 @@ export function CurrentPlanSchedule({
       const session = await startOrResume(day.workout.id);
       navigate(`/workout-logs/${session.id}`);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to start session"));
     }
   };
@@ -147,6 +164,7 @@ export function CurrentPlanSchedule({
       await removePlanDay(plan.id, dayOfWeek);
       await refresh();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to clear day"));
     }
   };
@@ -166,6 +184,7 @@ export function CurrentPlanSchedule({
       await removePlanDay(plan.id, fromDay);
       await refresh();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to move workout"));
       await refresh();
     }
@@ -181,11 +200,13 @@ export function CurrentPlanSchedule({
       setAssigningDay(null);
       await refresh();
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to assign workout"));
     }
   };
 
   if (!plan) {
+    // [AI-GENERATED: Cursor]
     return (
       <div className="mb-4">
         <h2 className="h4">Current Plan</h2>
@@ -209,6 +230,7 @@ export function CurrentPlanSchedule({
     workoutLogId: entry.workoutLogId,
   }));
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="mb-4">
       <ErrorBanner message={error} />
@@ -278,6 +300,7 @@ export function CurrentPlanSchedule({
 
 /** Legacy URL; the live schedule is on the plans page. */
 function CurrentPlan() {
+  // [AI-GENERATED: Cursor]
   return <Navigate to="/plans" replace />;
 }
 

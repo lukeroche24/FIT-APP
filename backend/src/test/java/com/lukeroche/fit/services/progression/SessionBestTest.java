@@ -1,3 +1,14 @@
+/*
+ * Filename: SessionBestTest.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - I decided which behaviours to test.
+ * - This test file was generated with Cursor from those cases.
+ * - Tool Used: Cursor
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.LoadingType;
@@ -27,7 +38,6 @@ class SessionBestTest {
         assertFalse(sessions.getFirst().prescriptionHit());
         assertEquals(8, sessions.getFirst().reps());
         assertEquals(100.0, sessions.getFirst().weight());
-        assertEquals(OneRepMax.epley(100, 8), sessions.getFirst().value());
     }
 
     @Test
@@ -54,7 +64,6 @@ class SessionBestTest {
         assertTrue(sessions.getFirst().prescriptionHit());
         assertEquals(1, sessions.getFirst().reps());
         assertEquals(105.0, sessions.getFirst().weight());
-        assertEquals(105.0, sessions.getFirst().value());
     }
 
     @Test
@@ -130,7 +139,6 @@ class SessionBestTest {
         assertTrue(sessions.getFirst().prescriptionHit());
         assertEquals(8, sessions.getFirst().reps());
         assertEquals(90.0, sessions.getFirst().weight());
-        assertEquals(OneRepMax.epley(90, 8), sessions.getFirst().value());
     }
 
     @Test

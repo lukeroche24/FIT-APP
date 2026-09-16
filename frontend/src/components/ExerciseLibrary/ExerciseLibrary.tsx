@@ -1,3 +1,18 @@
+/*
+ * Filename: ExerciseLibrary.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import { listExercises } from "../../api/exercises";
 import { DEFAULT_PAGE_SIZE } from "../../api/paging";
@@ -58,6 +73,7 @@ function ExerciseLibrary() {
         setTotalElements(result.totalElements);
         setLoading(false);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         setError(toErrorMessage(err, "Failed to load exercises"));
         setLoading(false);
@@ -80,6 +96,7 @@ function ExerciseLibrary() {
         setTotalPages(result.totalPages);
         setTotalElements(result.totalElements);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load exercises")));
   };
 
@@ -93,6 +110,7 @@ function ExerciseLibrary() {
     reload();
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout width="narrow">
       <div className="page-header">

@@ -1,3 +1,19 @@
+/*
+ * Filename: PlanBuilder.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { activatePlan, getPlan, persistPlanEdits } from "../../api/plans";
@@ -40,6 +56,7 @@ function daysFromPlan(plan: PlanResponse): PlanGridDay[] {
   });
 }
 
+// [AI-GENERATED: Cursor]
 function cloneDays(days: PlanGridDay[]): PlanGridDay[] {
   return days.map((day) => ({ ...day }));
 }
@@ -86,6 +103,7 @@ function PlanBuilder() {
     }
 
     loadSavedPlan()
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load plan")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, loadSavedPlan]);
@@ -99,6 +117,7 @@ function PlanBuilder() {
       await activatePlan(plan.id);
       navigate("/plans");
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to activate plan"));
     }
   };
@@ -130,6 +149,7 @@ function PlanBuilder() {
       setIsNew(false);
       setEditing(false);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to save plan"));
     } finally {
       setSaving(false);
@@ -137,6 +157,7 @@ function PlanBuilder() {
   };
 
   const handleClear = (dayOfWeek: number) => {
+    // [AI-GENERATED: Cursor]
     setDaysDraft((prev) =>
       prev.map((day) => (day.dayOfWeek === dayOfWeek ? { ...day, workout: null } : day)),
     );
@@ -161,6 +182,7 @@ function PlanBuilder() {
       return;
     }
     const dayOfWeek = assigningDay;
+    // [AI-GENERATED: Cursor]
     setDaysDraft((prev) =>
       prev.map((day) => (day.dayOfWeek === dayOfWeek ? { ...day, workout } : day)),
     );
@@ -168,6 +190,7 @@ function PlanBuilder() {
   };
 
   if (loading) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout width="wide">
         <div className="page-header">
@@ -182,6 +205,7 @@ function PlanBuilder() {
   }
 
   if (!plan) {
+    // [AI-GENERATED: Cursor]
     return (
       <PageLayout width="wide">
         <div className="page-header">
@@ -197,6 +221,7 @@ function PlanBuilder() {
 
   const days = editing ? daysDraft : daysFromPlan(plan);
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout width="wide">
       <ErrorBanner message={error} />

@@ -1,3 +1,18 @@
+/*
+ * Filename: AddExerciseToWorkout.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import { listExercises } from "../../api/exercises";
 import { DEFAULT_PAGE_SIZE } from "../../api/paging";
@@ -51,6 +66,7 @@ function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
         setExercises(result.content);
         setTotalPages(result.totalPages);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "Failed to load exercises")))
       .finally(() => setLoading(false));
   }, [query, page]);
@@ -72,6 +88,7 @@ function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
   };
 
   if (creatingNew) {
+    // [AI-GENERATED: Cursor]
     return (
       <div className="p-3">
         <RepTargetFields
@@ -92,6 +109,7 @@ function AddExerciseToWorkout({ onPicked, onCancel }: Props) {
     );
   }
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="p-3">
       <h2>Add Exercise</h2>

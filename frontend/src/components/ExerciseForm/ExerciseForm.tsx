@@ -1,3 +1,19 @@
+/*
+ * Filename: ExerciseForm.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - AI was used for the spread syntax in the marked sections.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { createExercise, deleteExercise, updateExercise } from "../../api/exercises";
@@ -46,7 +62,6 @@ function ExerciseForm({ exercise, onSaved, onDeleted, onCancel }: Props) {
       description,
       loadingType: loadingType === "" ? undefined : loadingType,
       loadStep:
-        // Added-load bodyweight still needs a step; unweighted work does not.
         loadingType === "BODYWEIGHT" && !tracking.tracksWeight ? undefined : toNumber(loadStep),
       tracksWeight: tracking.tracksWeight,
       tracksDuration: tracking.tracksDuration,
@@ -63,6 +78,7 @@ function ExerciseForm({ exercise, onSaved, onDeleted, onCancel }: Props) {
         : await createExercise(payload);
       onSaved(saved);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Save failed"));
     } finally {
       setLoading(false);
@@ -77,12 +93,14 @@ function ExerciseForm({ exercise, onSaved, onDeleted, onCancel }: Props) {
       await deleteExercise(exercise.id);
       onDeleted(exercise.id);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Delete failed"));
     } finally {
       setLoading(false);
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="p-3">
       <h2>{exercise ? "Edit Exercise" : "New Exercise"}</h2>

@@ -1,3 +1,13 @@
+/*
+ * Filename: useRequireAuth.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";

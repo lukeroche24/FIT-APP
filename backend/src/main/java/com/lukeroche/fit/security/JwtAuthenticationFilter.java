@@ -1,3 +1,13 @@
+/*
+ * Filename: JwtAuthenticationFilter.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.security;
 
 import com.lukeroche.fit.services.AuthenticationService;
@@ -42,13 +52,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                // Controllers read userId from the request, not the SecurityContext principal.
                 if (userDetails instanceof FitUserDetails) {
                     request.setAttribute("userId", ((FitUserDetails) userDetails).getId());
                 }
             }
         } catch(Exception ex) {
-            // Expired or malformed JWT: do not 401 here, let the security chain deny the request.
             log.warn("Received invalid auth token");
         }
 

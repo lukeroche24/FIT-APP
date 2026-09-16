@@ -1,3 +1,14 @@
+/*
+ * Filename: ProgressionRecommenderTest.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - I decided which behaviours to test.
+ * - This test file was generated with Cursor from those cases.
+ * - Tool Used: Cursor
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
@@ -14,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class ProgressionRecommenderTest {
 
     private final ProgressionRecommender recommender =
-            new ProgressionRecommender(new ProgressionConfig(5, 0.25, 3, 0.9, 14, 28), new StrengthConfig(28));
+            new ProgressionRecommender(new ProgressionConfig(0.9, 14, 28), new StrengthConfig(28));
     private final LoadingScheme scheme = new StepLoading(2.5);
     private final ExerciseEntity barbell = ExerciseEntity.builder()
             .name("Bench press")
@@ -29,21 +40,6 @@ class ProgressionRecommenderTest {
     @Test
     void holdsWhenAnySetMissedTarget() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
-                List.of(session(8, 80, false, 0)),
-                barbell,
-                scheme,
-                6,
-                12);
-
-        assertEquals(8, rec.targetReps());
-        assertEquals(80.0, rec.targetWeight());
-    }
-
-    @Test
-    void doesNotDeloadFromAFailedSetEvenIfOneRmTrendIsDown() {
-        Recommendation rec = recommender.recommend(
-                ProgressionState.REGRESSING,
                 List.of(session(8, 80, false, 0)),
                 barbell,
                 scheme,
@@ -57,7 +53,6 @@ class ProgressionRecommenderTest {
     @Test
     void addsARepWhenEverySetHit() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 80, true, 0)),
                 barbell,
                 scheme,
@@ -71,7 +66,6 @@ class ProgressionRecommenderTest {
     @Test
     void convertsFromTheActualOneRmNotTheSeededTarget() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(1, 105, true, 0)),
                 barbell,
                 scheme,
@@ -85,14 +79,12 @@ class ProgressionRecommenderTest {
     @Test
     void stillDeloadsAfterALongLayoffEvenIfLastSessionMissed() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 80, false, 30)),
                 barbell,
                 scheme,
                 6,
                 12);
 
-        assertEquals(ProgressionState.REGRESSING, rec.state());
         assertEquals(8, rec.targetReps());
         assertEquals(72.5, rec.targetWeight());
     }
@@ -100,7 +92,6 @@ class ProgressionRecommenderTest {
     @Test
     void holdsBodyweightRepsWhenPrescriptionMissed() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 0, false, 0)),
                 bodyweight,
                 scheme,
@@ -114,7 +105,6 @@ class ProgressionRecommenderTest {
     @Test
     void holdsWeightAfterATwoWeekLayoffEvenIfLastSessionHit() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 80, true, 16)),
                 barbell,
                 scheme,
@@ -128,7 +118,6 @@ class ProgressionRecommenderTest {
     @Test
     void convertsOneRmIntoThreeRmWithoutAddingAStep() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(1, 100, true, 0)),
                 barbell,
                 scheme,
@@ -143,7 +132,6 @@ class ProgressionRecommenderTest {
     @Test
     void convertsIntoANewRangeEvenIfLastSessionMissed() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(1, 100, false, 0)),
                 barbell,
                 scheme,
@@ -157,7 +145,6 @@ class ProgressionRecommenderTest {
     @Test
     void usesPredictedOneRmWhenConvertingFromARecentHeavierEstimate() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 80, true, 5), session(1, 90, true, 0)),
                 barbell,
                 scheme,
@@ -172,7 +159,6 @@ class ProgressionRecommenderTest {
     @Test
     void deloadsTheConvertedLoadAfterALongLayoffInANewRange() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(1, 100, true, 30)),
                 barbell,
                 scheme,
@@ -180,7 +166,6 @@ class ProgressionRecommenderTest {
                 3);
 
         double converted = OneRepMax.weightForReps(100, 3) * 0.9;
-        assertEquals(ProgressionState.REGRESSING, rec.state());
         assertEquals(3, rec.targetReps());
         assertEquals(scheme.nearest(converted), rec.targetWeight());
     }
@@ -188,7 +173,6 @@ class ProgressionRecommenderTest {
     @Test
     void extraRepsAfterAHitStayOnDoubleProgression() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(9, 80, true, 0)),
                 barbell,
                 scheme,
@@ -202,7 +186,6 @@ class ProgressionRecommenderTest {
     @Test
     void doubleProgressionAddsLoadAtTheTopOfTheRange() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(12, 80, true, 0)),
                 barbell,
                 scheme,
@@ -223,7 +206,6 @@ class ProgressionRecommenderTest {
                 .build();
 
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 5, true, 0)),
                 dip,
                 new StepLoading(2.5),
@@ -237,7 +219,6 @@ class ProgressionRecommenderTest {
     @Test
     void swapsAnInvertedRepRange() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.PROGRESSING,
                 List.of(session(8, 80, true, 0)),
                 barbell,
                 scheme,
@@ -251,7 +232,6 @@ class ProgressionRecommenderTest {
     @Test
     void emptyHistoryHasNoTargets() {
         Recommendation rec = recommender.recommend(
-                ProgressionState.NEW,
                 List.of(),
                 barbell,
                 scheme,
@@ -266,7 +246,6 @@ class ProgressionRecommenderTest {
         return new SessionStrength(
                 1L,
                 LocalDateTime.now().minusDays(daysAgo),
-                100,
                 reps,
                 weight,
                 hit);

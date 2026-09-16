@@ -1,3 +1,18 @@
+/*
+ * Filename: StrengthLookup.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import { getStrengthStats, listStrengthExercises } from "../../api/users";
 import type { StrengthExerciseOption, StrengthStatsResponse } from "../../api/users";
@@ -52,6 +67,7 @@ function StrengthLookup({ userId }: StrengthLookupProps) {
           setExerciseId(list[0].id);
         }
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         if (!cancelled) {
           setError(toErrorMessage(err, "Failed to load exercises"));
@@ -82,6 +98,7 @@ function StrengthLookup({ userId }: StrengthLookupProps) {
           setStats(result);
         }
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         if (!cancelled) {
           setError(toErrorMessage(err, "Failed to load strength stats"));
@@ -97,6 +114,7 @@ function StrengthLookup({ userId }: StrengthLookupProps) {
     };
   }, [userId, exerciseId]);
 
+  // [AI-GENERATED: Cursor]
   return (
     <div className="profile-card strength-card mb-4">
       <div className="section-label">Strength</div>

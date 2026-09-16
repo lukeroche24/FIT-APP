@@ -1,3 +1,14 @@
+/*
+ * Filename: LoadingTypeSuggestion.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me except the name-hint lists.
+ * - BODYWEIGHT_HINTS, DUMBBELL_HINTS, and MACHINE_HINTS were generated with AI for convenience and are marked // [AI-GENERATED].
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
@@ -14,13 +25,16 @@ import java.util.List;
 @Component
 public class LoadingTypeSuggestion {
 
+    // [AI-GENERATED: Cursor]
     private static final List<String> BODYWEIGHT_HINTS = List.of(
             "pull up", "pull-up", "pullup", "chin up", "chin-up",
             "push up", "push-up", "pushup", "dip", "plank", "crunch", "sit up"
     );
 
+    // [AI-GENERATED: Cursor]
     private static final List<String> DUMBBELL_HINTS = List.of("dumbbell");
 
+    // [AI-GENERATED: Cursor]
     private static final List<String> MACHINE_HINTS = List.of(
             "cable", "machine", "pulldown", "pushdown", "pec deck",
             "leg press", "leg extension", "leg curl", "seated row"
@@ -45,8 +59,7 @@ public class LoadingTypeSuggestion {
             exerciseEntity.setLoadingType(suggest(exerciseEntity.getName()));
         }
 
-        if (exerciseEntity.getLoadStep() == null
-                || exerciseEntity.getLoadStep() <= 0) {
+        if (exerciseEntity.getLoadStep() == null || exerciseEntity.getLoadStep() <= 0) {
             if (exerciseEntity.getLoadingType() == LoadingType.BODYWEIGHT) {
                 if (SetTracking.tracksWeight(exerciseEntity.getTracksWeight())) {
                     exerciseEntity.setLoadStep(2.5);

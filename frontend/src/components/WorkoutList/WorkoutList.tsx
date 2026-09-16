@@ -1,3 +1,18 @@
+/*
+ * Filename: WorkoutList.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useEffect, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -52,6 +67,7 @@ function WorkoutList() {
         setTotalElements(result.totalElements);
         setLoading(false);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => {
         setError(toErrorMessage(err, "Failed to load workouts"));
         setLoading(false);
@@ -74,6 +90,7 @@ function WorkoutList() {
       closeModal();
       navigate(`/workouts/${created.id}`, { state: { isNew: true } });
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setSaveError(toErrorMessage(err, "Failed to create workout"));
     } finally {
       setSaving(false);
@@ -97,10 +114,12 @@ function WorkoutList() {
       setTotalPages(result.totalPages);
       setTotalElements(result.totalElements);
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to delete workout"));
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout width="narrow">
       <div className="page-header">

@@ -17,11 +17,22 @@ export interface AuthResponse {
   expiresIn: number;
 }
 
+/*
+ * AI Usage Declaration (error handling only):
+ * - Tool Used: Cursor
+ * - handleAuthResponse is AI-generated so login/register can show API errors
+ *   without the authenticated 401 redirect.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
+// [AI-GENERATED: Cursor]
 interface ApiErrorResponse {
   status: number;
   message: string;
 }
 
+// [AI-GENERATED: Cursor]
 async function handleAuthResponse(response: Response): Promise<AuthResponse> {
   if (!response.ok) {
     const error: ApiErrorResponse = await response.json();

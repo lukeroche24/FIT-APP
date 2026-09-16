@@ -1,3 +1,13 @@
+/*
+ * Filename: PlanServiceImpl.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.impl;
 
 import com.lukeroche.fit.domain.dto.plan.PlanOccurrenceStatus;
@@ -122,7 +132,6 @@ public class PlanServiceImpl implements PlanService {
 
     @Override
     public PlanEntity activate(Long planId, UUID userId) {
-        // Only one active plan per user; the previous one is turned off first.
         planRepository.findByCreatedByUserIdAndActiveTrue(userId)
                 .filter(existingActive -> !existingActive.getId().equals(planId))
                 .ifPresent(existingActive -> {
@@ -176,7 +185,6 @@ public class PlanServiceImpl implements PlanService {
             PlanDayEntity planDay = dayMap.get(dayOfWeek);
             WorkoutEntity workout = planDay != null ? planDay.getWorkoutEntity() : null;
             Long workoutLogId = null;
-            // REST days stay in the calendar so the week layout matches the plan.
             PlanOccurrenceStatus status = PlanOccurrenceStatus.REST;
 
             if (workout != null) {
@@ -227,7 +235,6 @@ public class PlanServiceImpl implements PlanService {
                 continue;
             }
             String key = log.getCompletedAt().toLocalDate() + ":" + log.getSourceWorkoutId();
-            // First completed log for that date and workout wins if they logged twice.
             completed.putIfAbsent(key, log.getId());
         }
         return completed;

@@ -1,3 +1,18 @@
+/*
+ * Filename: FriendProfile.tsx
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains JSX/markup generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - I wrote an initial HTML/JSX draft to show the layout I wanted.
+ * - AI rewrote that markup so it looked and structured better. The version in this file is that rewrite.
+ * - AI-generated JSX/markup sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is also AI-generated and marked // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { unfriend } from "../../api/friends";
@@ -43,6 +58,7 @@ function FriendProfile() {
         setProfile(nextProfile);
         setActivePlan(plan);
       })
+      // [AI-GENERATED: Cursor]
       .catch((err) => setError(toErrorMessage(err, "This profile isn't available")))
       .finally(() => setLoading(false));
   }, [isAuthenticated, userId]);
@@ -58,11 +74,13 @@ function FriendProfile() {
       await unfriend(userId);
       navigate("/friends");
     } catch (err) {
+      // [AI-GENERATED: Cursor]
       setError(toErrorMessage(err, "Failed to unfriend"));
       setUnfriending(false);
     }
   };
 
+  // [AI-GENERATED: Cursor]
   return (
     <PageLayout width="wide">
       <div className="page-header">

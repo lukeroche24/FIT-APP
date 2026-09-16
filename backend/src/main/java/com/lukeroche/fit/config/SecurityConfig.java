@@ -1,3 +1,13 @@
+/*
+ * Filename: SecurityConfig.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.config;
 
 import com.lukeroche.fit.repositories.UserRepository;
@@ -65,7 +75,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Vite dev origin; Authorization must be listed or the browser drops the JWT.
         configuration.setAllowedOrigins(List.of("http://localhost:5173",
                                                "https://fit-app-1.onrender.com"
                                                ));

@@ -1,3 +1,14 @@
+/*
+ * Filename: repTarget.test.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - I decided which behaviours to test.
+ * - This test file was generated with Cursor from those cases.
+ * - Tool Used: Cursor
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { describe, expect, it } from "vitest";
 import { formatRepTarget, isSingleRepTarget } from "./repTarget";
 

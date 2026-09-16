@@ -1,9 +1,21 @@
+/*
+ * Filename: token.test.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - I decided which behaviours to test.
+ * - This test file was generated with Cursor from those cases.
+ * - Tool Used: Cursor
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
+
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { clearToken, getToken, setToken } from "./token";
 import { authHeaders } from "./http";
 
 const TOKEN_KEY = "fit_token";
 
+// [AI-GENERATED: Cursor]
 function encodeSegment(value: unknown): string {
   return btoa(JSON.stringify(value))
     .replace(/\+/g, "-")

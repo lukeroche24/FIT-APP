@@ -1,3 +1,13 @@
+/*
+ * Filename: UserServiceImpl.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.impl;
 
 import com.lukeroche.fit.domain.dto.user.MeResponse;
@@ -134,7 +144,6 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserProfileResponse getVisibleProfile(UUID viewerId, UUID targetId) {
         if (!viewerId.equals(targetId) && !friendshipService.isFriend(viewerId, targetId)) {
-            // Same not-found as a missing user so friendship is not leaked.
             throw new EntityNotFoundException("User not found");
         }
 

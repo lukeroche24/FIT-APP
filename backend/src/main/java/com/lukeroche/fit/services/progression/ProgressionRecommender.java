@@ -1,3 +1,13 @@
+/*
+ * Filename: ProgressionRecommender.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
@@ -31,20 +41,17 @@ public class ProgressionRecommender {
     /**
      * Returns the next target reps and weight for this exercise.
      *
-     * @param state     trend label from {@link ProgressionClassifier}; layoff
-     *                  still overrides the load via hold/deload below
      * @param sessions  completed sessions in chronological order
      * @param minReps   workout minimum; {@code null} defaults to 6
      * @param maxReps   workout maximum; {@code null} defaults to 12
      */
-    public Recommendation recommend(ProgressionState state,
-                                  List<SessionStrength> sessions,
+    public Recommendation recommend(List<SessionStrength> sessions,
                                   ExerciseEntity exercise,
                                   LoadingScheme scheme,
                                   Integer minReps,
                                   Integer maxReps) {
         if (sessions.isEmpty()) {
-            return new Recommendation(state, null, null);
+            return new Recommendation(null, null);
         }
 
         SessionStrength last = sessions.get(sessions.size() - 1);
@@ -61,45 +68,41 @@ public class ProgressionRecommender {
         boolean bodyweightNoLoad = bodyweight && !loadedBodyweight;
         long daysOff = daysSince(last);
         boolean deload = config.deloadAfterDays() > 0 && daysOff >= config.deloadAfterDays();
-        // Extra reps beyond max after a hit (e.g. 9 when the workout is 8s) stay
-        // on double progression. 1RM conversion is only for a true range change.
         boolean outsideRange = last.reps() < resolvedMin
                 || (last.reps() > resolvedMax && !last.prescriptionHit());
 
-        // 1RM → 3RM (and similar) must convert, not add 2.5 kg on the old load.
         if (outsideRange) {
             if (bodyweightNoLoad) {
                 int reps = Math.min(Math.max(last.reps(), resolvedMin), resolvedMax);
                 if (deload) {
-                    return new Recommendation(ProgressionState.REGRESSING, Math.max(resolvedMin, reps - 1), null);
+                    return new Recommendation(Math.max(resolvedMin, reps - 1), null);
                 }
-                return new Recommendation(state, reps, null);
+                return new Recommendation(reps, null);
             }
             if (last.weight() > 0) {
-                return convertToReps(state, sessions, last, resolvedMin, scheme, deload);
+                return convertToReps(sessions, last, resolvedMin, scheme, deload);
             }
         }
 
         if (deload) {
             if (bodyweightNoLoad) {
-                return new Recommendation(ProgressionState.REGRESSING, Math.max(resolvedMin, last.reps() - 1), null);
+                return new Recommendation(Math.max(resolvedMin, last.reps() - 1), null);
             }
             if (loadedBodyweight && last.weight() <= 0) {
-                return new Recommendation(ProgressionState.REGRESSING, Math.max(resolvedMin, last.reps() - 1), 0.0);
+                return new Recommendation(Math.max(resolvedMin, last.reps() - 1), 0.0);
             }
             return deload(last, scheme);
         }
 
-        // Miss any working set, or 14+ days off: repeat last load. Do not add a rep or plate.
         if (!last.prescriptionHit() || (config.holdAfterDays() > 0 && daysOff >= config.holdAfterDays())) {
-            return hold(state, last, bodyweightNoLoad, scheme);
+            return hold(last, bodyweightNoLoad, scheme);
         }
 
         if (bodyweightNoLoad) {
-            return new Recommendation(state, last.reps() + 1, null);
+            return new Recommendation(last.reps() + 1, null);
         }
 
-        return progress(state, last, resolvedMin, resolvedMax, scheme);
+        return progress(last, resolvedMin, resolvedMax, scheme);
     }
 
     /**
@@ -107,8 +110,7 @@ public class ProgressionRecommender {
      * to the exercise load step. Applies the deload factor when the user has
      * been off long enough.
      */
-    private Recommendation convertToReps(ProgressionState state,
-                                         List<SessionStrength> sessions,
+    private Recommendation convertToReps(List<SessionStrength> sessions,
                                          SessionStrength last,
                                          int targetReps,
                                          LoadingScheme scheme,
@@ -116,10 +118,9 @@ public class ProgressionRecommender {
         double oneRm = estimatedOneRm(sessions, last);
         double weight = OneRepMax.weightForReps(oneRm, targetReps);
         if (deload) {
-            return new Recommendation(
-                    ProgressionState.REGRESSING, targetReps, scheme.nearest(weight * config.deloadFactor()));
+            return new Recommendation(targetReps, scheme.nearest(weight * config.deloadFactor()));
         }
-        return new Recommendation(state, targetReps, scheme.nearest(weight));
+        return new Recommendation(targetReps, scheme.nearest(weight));
     }
 
     /** Best Epley 1RM in the Strength estimated-1RM window, floored at the last session. */
@@ -139,19 +140,17 @@ public class ProgressionRecommender {
         return best;
     }
 
-    private static Recommendation hold(ProgressionState state,
-                                       SessionStrength last,
+    private static Recommendation hold(SessionStrength last,
                                        boolean bodyweightNoLoad,
                                        LoadingScheme scheme) {
         if (bodyweightNoLoad) {
-            return new Recommendation(state, last.reps(), null);
+            return new Recommendation(last.reps(), null);
         }
         Double weight = last.weight() > 0 ? scheme.nearest(last.weight()) : last.weight();
-        return new Recommendation(state, last.reps(), weight);
+        return new Recommendation(last.reps(), weight);
     }
 
-    private Recommendation progress(ProgressionState state,
-                                   SessionStrength last,
+    private Recommendation progress(SessionStrength last,
                                    int minReps,
                                    int maxReps,
                                    LoadingScheme scheme) {
@@ -163,16 +162,14 @@ public class ProgressionRecommender {
         }
 
         if (reps < maxReps) {
-            return new Recommendation(state, reps + 1, last.weight());
+            return new Recommendation(reps + 1, last.weight());
         }
-
-        // Top of the range: add one load step and drop back to min reps.
 
         OptionalDouble nextWeight = scheme.nextAbove(last.weight());
         if (nextWeight.isEmpty()) {
-            return new Recommendation(state, reps, last.weight());
+            return new Recommendation(reps, last.weight());
         }
-        return new Recommendation(state, minReps, nextWeight.getAsDouble());
+        return new Recommendation(minReps, nextWeight.getAsDouble());
     }
 
     private static long daysSince(SessionStrength last) {
@@ -185,6 +182,6 @@ public class ProgressionRecommender {
 
     private Recommendation deload(SessionStrength last, LoadingScheme scheme) {
         double dropped = last.weight() * config.deloadFactor();
-        return new Recommendation(ProgressionState.REGRESSING, last.reps(), scheme.nearest(dropped));
+        return new Recommendation(last.reps(), scheme.nearest(dropped));
     }
 }

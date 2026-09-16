@@ -1,3 +1,13 @@
+/*
+ * Filename: ProgressionService.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.ExerciseEntity;
@@ -10,26 +20,20 @@ import java.util.UUID;
 
 /**
  * Entry point for next-session suggestions. Loads completed set history for an
- * exercise, collapses it to one point per session, classifies the trend, then
- * asks {@link ProgressionRecommender} for target reps and weight.
+ * exercise, collapses it to one point per session, then asks
+ * {@link ProgressionRecommender} for target reps and weight.
  */
 @Service
 public class ProgressionService {
 
     private final LoggedSetRepository loggedSetRepository;
-    private final ProgressionConfig config;
-    private final ProgressionClassifier classifier;
     private final LoadingSchemeFactory loadingSchemeFactory;
     private final ProgressionRecommender recommender;
 
     public ProgressionService(LoggedSetRepository loggedSetRepository,
-                              ProgressionConfig config,
-                              ProgressionClassifier classifier,
                               LoadingSchemeFactory loadingSchemeFactory,
                               ProgressionRecommender recommender) {
         this.loggedSetRepository = loggedSetRepository;
-        this.config = config;
-        this.classifier = classifier;
         this.loadingSchemeFactory = loadingSchemeFactory;
         this.recommender = recommender;
     }
@@ -51,9 +55,7 @@ public class ProgressionService {
         List<SetHistoryRow> sets =
                 loggedSetRepository.findCompletedSetHistory(userId, exercise.getId());
         List<SessionStrength> sessions = SessionBest.toSessions(sets, exercise.getLoadingType());
-        Trend trend = TrendFit.fit(sessions, config.windowSize());
-        ProgressionState state = classifier.applyRecency(classifier.classify(sessions, trend), sessions);
         LoadingScheme scheme = loadingSchemeFactory.forExercise(exercise);
-        return recommender.recommend(state, sessions, exercise, scheme, minReps, maxReps);
+        return recommender.recommend(sessions, exercise, scheme, minReps, maxReps);
     }
 }

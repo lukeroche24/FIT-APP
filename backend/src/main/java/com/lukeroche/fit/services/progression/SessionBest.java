@@ -1,3 +1,13 @@
+/*
+ * Filename: SessionBest.java
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 package com.lukeroche.fit.services.progression;
 
 import com.lukeroche.fit.domain.entities.LoadingType;
@@ -12,9 +22,8 @@ import java.util.Map;
 
 /**
  * Collapses completed sets into one {@link SessionStrength} per workout log.
- * Trend uses the best successful set. Next-session reps/weight use actuals
- * when every set hit its target, and the prescription when anything missed,
- * so a typed 105 kg 1RM is not discarded in favour of a leftover planned load.
+ * Next-session reps/weight use actuals when every set hit its target, and the
+ * prescription when anything missed.
  */
 public final class SessionBest {
 
@@ -90,13 +99,11 @@ public final class SessionBest {
                 reps = bestCompletedReps;
                 weight = bestCompletedWeight;
             } else {
-                // Repeat the written prescription, not the short or failed actuals.
                 reps = prescribedReps != null ? prescribedReps : (bestCompleted > 0 ? bestCompletedReps : bestAttemptReps);
                 weight = prescribedWeight != null ? prescribedWeight : (bestCompleted > 0 ? bestCompletedWeight : bestAttemptWeight);
             }
-            double trendValue = bestCompleted > 0 ? bestCompleted : bestAttempt;
             sessions.add(new SessionStrength(
-                    entry.getKey(), completedAt, trendValue, reps, weight, prescriptionHit));
+                    entry.getKey(), completedAt, reps, weight, prescriptionHit));
         }
 
         sessions.sort(Comparator.comparing(SessionStrength::completedAt));
@@ -159,7 +166,6 @@ public final class SessionBest {
 
     private static double sessionValue(WeakerSide.Side side, LoadingType loadingType) {
         if (loadingType == LoadingType.BODYWEIGHT) {
-            // Rank added load first, then reps, so 5 kg × 8 beats 0 kg × 12.
             return side.weight() * 1000 + side.reps();
         }
         return OneRepMax.epley(side.weight(), side.reps());

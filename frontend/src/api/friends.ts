@@ -1,3 +1,13 @@
+/*
+ * Filename: friends.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - Tool Used: Cursor
+ * - The code in this file was written by me.
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed and understood all AI-assisted comments.
+ */
 import { authHeaders, handleJsonResponse } from "./http";
 import { buildPageQuery, type ListPage } from "./paging";
 import type { WorkoutResponse } from "./workouts";
