@@ -1,8 +1,8 @@
 # FIT
 
-Strength training tracker: exercises, workout templates, session logs, weekly plans, and friend activity. Prescriptions use double progression (add a rep, then add load), with a hold after time off and a deload after a longer gap. Rep-range changes convert through an estimated 1RM.
+Strength training tracker: exercises, workout templates, session logs, weekly plans, and friend activity.
 
-University of Glasgow MSc IT project. Register an account to use the app. There is no seeded demo user.
+University of Glasgow MSc IT project. [Live app](https://fit-app-1.onrender.com). Register an account to use it. There is no seeded demo user.
 
 ## Features
 
@@ -14,19 +14,26 @@ University of Glasgow MSc IT project. Register an account to use the app. There 
 - Friends, friend profiles, and a feed of completed sessions
 - Estimated and tested 1RM lookup
 
+## Progression
+
+Suggestions use double progression on the last completed session:
+
+- Hit the top of the rep range → add a rep, then add load
+- Miss the target → hold the same prescription
+- 14 days since the last session → hold. 28 days → deload
+- A new rep range converts through an estimated 1RM
+
 ## Stack
 
-| | |
+| Layer | Tech |
 | --- | --- |
 | API | Spring Boot 4, Java 21, PostgreSQL, JWT |
 | Web | React 19, TypeScript, Vite, Bootstrap 5 |
-| Tests | JUnit (Maven), Vitest |
-
-The Java package is `com.lukeroche.fit`.
+| Tests | JUnit (Maven wrapper), Vitest |
 
 ## Prerequisites
 
-- Java 21
+- Java 21 (the Maven wrapper is in `backend/`, so Maven itself is not required)
 - Node.js 20 or later
 - PostgreSQL, with a database named `test` (or change the URL in config)
 
@@ -38,9 +45,19 @@ username: postgres
 password: password
 ```
 
+Those values are local defaults. Override them in production.
+
+Create the database once:
+
+```sql
+CREATE DATABASE test;
+```
+
 Tables are created and updated with Hibernate (`ddl-auto=update`).
 
 ## Run locally
+
+Start the API first, then the web app, then register an account.
 
 API (default [http://localhost:8080](http://localhost:8080)):
 
@@ -65,7 +82,7 @@ Copy `frontend/.env.example` to `frontend/.env` if the API is not on `http://loc
 
 | Setting | Where | Notes |
 | --- | --- | --- |
-| `jwt.secret` | `application.properties` | Must be at least 32 bytes. Change this before deploying. |
+| `jwt.secret` | `application.properties` | Must be at least 32 bytes. Local default is in git. Override before deploying. |
 | `jwt.expiry-ms` | `application.properties` | Access token lifetime (default 24 hours). |
 | Datasource | `application.properties` | Local Postgres. |
 | `fit.progression.*` | `application.properties` | Deload factor, hold after 14 days, deload after 28 days. |
@@ -88,22 +105,24 @@ Backend tests use an in-memory H2 database. They do not need Postgres.
 
 ## Deploy
 
-The API is a Docker image. `backend/Dockerfile` builds the Spring Boot jar. On Render, set the Docker context to `backend`.
+The API is a Docker image. `backend/Dockerfile` builds the Spring Boot jar. On Render, set the Docker context to `backend`, and set the Postgres URL and `jwt.secret` as environment variables.
 
-Point the frontend `VITE_API_URL` at the deployed API and rebuild. Keep `jwt.secret` out of git for a real environment.
+Point the frontend `VITE_API_URL` at the deployed API and rebuild.
 
 ## Layout
 
 ```
-backend/     Spring Boot API
-frontend/    Vite React app
+backend/              Spring Boot API (`com.lukeroche.fit`)
+backend/Dockerfile     Render / production image
+backend/src/test      JUnit tests
+frontend/             Vite React app (Vitest next to the source)
 ```
 
 ## AI usage
 
 I used Cursor as a guide while writing code (design, naming, and whether an approach was sound). This was my first time using TypeScript and React. I wrote the frontend myself as best I could, then used Cursor to help check it was correct and to help with tidying it up.
 
-I wrote the source myself except where a file marks a section as `[AI-GENERATED]`.
+I wrote the source myself except where a file marks a section as `[AI-GENERATED]`. File headers name the tool. I did not put a generated date on those tags because the work spanned the project and I do not have a single day.
 
 I decided which behaviours to test, then used Cursor to write the test files. I reviewed them and they pass. That is declared in each test file header.
 

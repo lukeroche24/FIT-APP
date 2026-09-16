@@ -3,9 +3,11 @@
  * Author: Luke Roche
  * Date: 2026-09-16
  * AI Usage Declaration:
- * - JWT expiry checking in this file was generated with the help of AI tools.
+ * - This file contains code generated with the help of AI tools.
  * - Tool Used: Cursor
+ * - JWT expiry checking in getToken and tokenIsExpired is AI-generated.
  * - AI-generated sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
  * I have reviewed, tested, and understood all AI-generated code.
  */
 const TOKEN_KEY = "fit_token";

@@ -3,9 +3,9 @@
  * Author: Luke Roche
  * Date: 2026-09-16
  * AI Usage Declaration:
- * - I decided which behaviours to test.
- * - This test file was generated with Cursor from those cases.
+ * - This file contains test code generated with the help of AI tools.
  * - Tool Used: Cursor
+ * - I decided which behaviours to test. Cursor wrote the file from those cases.
  * I have reviewed, tested, and understood all AI-generated code.
  */
 

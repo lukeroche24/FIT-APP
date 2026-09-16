@@ -1,3 +1,16 @@
+/*
+ * Filename: auth.ts
+ * Author: Luke Roche
+ * Date: 2026-09-16
+ * AI Usage Declaration:
+ * - This file contains code generated with the help of AI tools.
+ * - Tool Used: Cursor
+ * - handleAuthResponse is AI-generated so login/register can show API errors
+ *   without the authenticated 401 redirect.
+ * - AI-generated sections are marked with comments: // [AI-GENERATED]
+ * - I wrote the comments, then used AI to touch up the wording.
+ * I have reviewed, tested, and understood all AI-generated code.
+ */
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 export interface LoginRequest {
@@ -16,15 +29,6 @@ export interface AuthResponse {
   token: string;
   expiresIn: number;
 }
-
-/*
- * AI Usage Declaration (error handling only):
- * - Tool Used: Cursor
- * - handleAuthResponse is AI-generated so login/register can show API errors
- *   without the authenticated 401 redirect.
- * - I wrote the comments, then used AI to touch up the wording.
- * I have reviewed, tested, and understood all AI-generated code.
- */
 
 // [AI-GENERATED: Cursor]
 interface ApiErrorResponse {

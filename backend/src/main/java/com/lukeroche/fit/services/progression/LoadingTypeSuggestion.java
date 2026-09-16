@@ -5,7 +5,7 @@
  * AI Usage Declaration:
  * - Tool Used: Cursor
  * - The code in this file was written by me except the name-hint lists.
- * - BODYWEIGHT_HINTS, DUMBBELL_HINTS, and MACHINE_HINTS were generated with AI for convenience and are marked // [AI-GENERATED].
+ * - BODYWEIGHT_HINTS, DUMBBELL_HINTS, and MACHINE_HINTS were generated with AI and are marked // [AI-GENERATED].
  * - I wrote the comments, then used AI to touch up the wording.
  * I have reviewed, tested, and understood all AI-generated code.
  */

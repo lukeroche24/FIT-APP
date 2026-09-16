@@ -3,9 +3,9 @@
  * Author: Luke Roche
  * Date: 2026-09-16
  * AI Usage Declaration:
- * - AI was used for the spread syntax in authHeaders.
- * - The API error-body parsing and 401 logout path are AI-generated.
+ * - This file contains code generated with the help of AI tools.
  * - Tool Used: Cursor
+ * - Spread syntax in authHeaders, API error-body parsing, and the 401 logout path are AI-generated.
  * - AI-generated sections are marked with comments: // [AI-GENERATED]
  * - I wrote the comments, then used AI to touch up the wording.
  * I have reviewed, tested, and understood all AI-generated code.

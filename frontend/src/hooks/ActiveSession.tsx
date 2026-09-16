@@ -3,9 +3,10 @@
  * Author: Luke Roche
  * Date: 2026-09-16
  * AI Usage Declaration:
- * - Catch/display of API failures in this file is AI-generated.
+ * - This file contains code generated with the help of AI tools.
  * - Tool Used: Cursor
- * - AI-generated error-handling sections are marked with comments: // [AI-GENERATED]
+ * - Catch/display of API failures is AI-generated.
+ * - AI-generated sections are marked with comments: // [AI-GENERATED]
  * - I wrote the comments, then used AI to touch up the wording.
  * I have reviewed, tested, and understood all AI-generated code.
  */

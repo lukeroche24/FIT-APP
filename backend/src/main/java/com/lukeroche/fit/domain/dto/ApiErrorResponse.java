@@ -5,7 +5,7 @@
  * AI Usage Declaration:
  * - This file contains error-handling code generated with the help of AI tools.
  * - Tool Used: Cursor
- * - AI-generated error-handling sections are marked with comments: // [AI-GENERATED]
+ * - AI-generated sections are marked with comments: // [AI-GENERATED]
  * - I wrote the comments, then used AI to touch up the wording.
  * I have reviewed, tested, and understood all AI-generated code.
  */
